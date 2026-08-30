@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Navbar } from "./components/Navbar";
 import { CodeEditorTab } from "./components/CodeEditorTab";
 import { SecurityAuditTab } from "./components/SecurityAuditTab";
@@ -6,7 +6,8 @@ import { SimulatorTab } from "./components/SimulatorTab";
 import { DevSecOpsPipelineTab } from "./components/DevSecOpsPipelineTab";
 import { AiAuditorModal } from "./components/AiAuditorModal";
 import { TransactionLogsModal } from "./components/TransactionLogsModal";
-import { ActiveTab, SolanaWallet, OnChainCounterAccount, TransactionLog } from "./types";
+import { GitHubSyncModal } from "./components/GitHubSyncModal";
+import { ActiveTab, SolanaWallet, OnChainCounterAccount, TransactionLog, GitHubUser } from "./types";
 import {
   INITIAL_RUST_CODE,
   INITIAL_CLIENT_TS,
@@ -39,9 +40,38 @@ export default function App() {
   // Transaction Logs
   const [txLogs, setTxLogs] = useState<TransactionLog[]>([]);
 
+  // GitHub Auth and Fork State (stored in sessionStorage for session persistence)
+  const [githubToken, setGithubToken] = useState<string | null>(() => {
+    return sessionStorage.getItem("solana_devsecops_github_token");
+  });
+  const [githubUser, setGithubUser] = useState<GitHubUser | null>(() => {
+    const saved = sessionStorage.getItem("solana_devsecops_github_user");
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const handleSetGithubToken = (token: string | null) => {
+    setGithubToken(token);
+    if (token) {
+      sessionStorage.setItem("solana_devsecops_github_token", token);
+    } else {
+      sessionStorage.removeItem("solana_devsecops_github_token");
+      sessionStorage.removeItem("solana_devsecops_github_user");
+    }
+  };
+
+  const handleSetGithubUser = (user: GitHubUser | null) => {
+    setGithubUser(user);
+    if (user) {
+      sessionStorage.setItem("solana_devsecops_github_user", JSON.stringify(user));
+    } else {
+      sessionStorage.removeItem("solana_devsecops_github_user");
+    }
+  };
+
   // Modals state
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
+  const [isGitHubModalOpen, setIsGitHubModalOpen] = useState(false);
 
   // Perform real-time AST Security Audit whenever rustCode changes
   const auditResult = useMemo(() => {
@@ -63,6 +93,8 @@ export default function App() {
         cluster={cluster}
         setCluster={setCluster}
         onOpenAiModal={() => setIsAiModalOpen(true)}
+        githubUser={githubUser}
+        onOpenGitHubModal={() => setIsGitHubModalOpen(true)}
       />
 
       {/* Main Container */}
@@ -79,6 +111,7 @@ export default function App() {
             onRunAudit={() => setActiveTab("audit")}
             onOpenAiModal={() => setIsAiModalOpen(true)}
             onResetToRepo={handleResetToRepo}
+            onOpenGitHubModal={() => setIsGitHubModalOpen(true)}
           />
         )}
 
@@ -114,9 +147,12 @@ export default function App() {
           <div className="flex items-center space-x-2">
             <span className="font-semibold text-slate-300">Solana DevSecOps AST Suite</span>
             <span>•</span>
-            <span>Baseado no repositório <strong className="text-slate-200">mrcoantonioconceicao-ctrl/contratos-inteligentes</strong></span>
+            <span>Baseado no repositório <strong className="text-slate-200">{REPO_INFO.owner}/{REPO_INFO.repo}</strong></span>
           </div>
           <div className="flex items-center space-x-3 font-mono text-[11px]">
+            {githubUser && (
+              <span className="text-indigo-400 font-sans font-medium">Fork: {githubUser.login}/{REPO_INFO.repo}</span>
+            )}
             <span>Anchor v0.30.0</span>
             <span>Program ID: Fg6PaFpo...sLnS</span>
           </div>
@@ -135,6 +171,19 @@ export default function App() {
         onClose={() => setIsLogsModalOpen(false)}
         logs={txLogs}
       />
+
+      <GitHubSyncModal
+        isOpen={isGitHubModalOpen}
+        onClose={() => setIsGitHubModalOpen(false)}
+        rustCode={rustCode}
+        clientTsCode={clientTsCode}
+        anchorToml={anchorToml}
+        githubToken={githubToken}
+        setGithubToken={handleSetGithubToken}
+        githubUser={githubUser}
+        setGithubUser={handleSetGithubUser}
+      />
     </div>
   );
 }
+

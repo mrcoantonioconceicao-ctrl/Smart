@@ -1,6 +1,6 @@
 import React from "react";
-import { Shield, Code2, Cpu, Terminal, Sparkles, ExternalLink, Activity } from "lucide-react";
-import { ActiveTab } from "../types";
+import { Shield, Code2, Cpu, Terminal, Sparkles, ExternalLink, Activity, Github } from "lucide-react";
+import { ActiveTab, GitHubUser } from "../types";
 import { REPO_INFO } from "../data/contractData";
 
 interface NavbarProps {
@@ -10,6 +10,8 @@ interface NavbarProps {
   cluster: string;
   setCluster: (cluster: string) => void;
   onOpenAiModal: () => void;
+  githubUser: GitHubUser | null;
+  onOpenGitHubModal: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -19,6 +21,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   cluster,
   setCluster,
   onOpenAiModal,
+  githubUser,
+  onOpenGitHubModal,
 }) => {
   return (
     <header className="bg-slate-900 border-b border-slate-800 text-slate-100 sticky top-0 z-40 shadow-xl">
@@ -104,37 +108,51 @@ export const Navbar: React.FC<NavbarProps> = ({
           </nav>
 
           {/* Controls Right */}
-          <div className="flex items-center space-x-3">
-            {/* Cluster Selector */}
-            <div className="flex items-center space-x-1.5 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800 text-xs">
-              <Activity className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-              <select
-                value={cluster}
-                onChange={(e) => setCluster(e.target.value)}
-                className="bg-transparent text-slate-300 font-mono text-xs focus:outline-none cursor-pointer"
-              >
-                <option value="Localnet" className="bg-slate-900">Solana Localnet</option>
-                <option value="Devnet" className="bg-slate-900">Solana Devnet</option>
-                <option value="Mainnet-Beta" className="bg-slate-900">Solana Mainnet</option>
-              </select>
-            </div>
+          <div className="flex items-center space-x-2.5">
+            {/* GitHub Sync Button */}
+            <button
+              onClick={onOpenGitHubModal}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                githubUser
+                  ? "bg-slate-950 border-indigo-500/50 text-indigo-300 hover:border-indigo-400 shadow-sm"
+                  : "bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200"
+              }`}
+              title={githubUser ? `Conectado como @${githubUser.login}` : "Conectar GitHub"}
+            >
+              {githubUser ? (
+                <>
+                  <img
+                    src={githubUser.avatar_url}
+                    alt={githubUser.login}
+                    className="w-4 h-4 rounded-full border border-indigo-400"
+                  />
+                  <span className="font-mono">@{githubUser.login}</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                </>
+              ) : (
+                <>
+                  <Github className="w-3.5 h-3.5 text-slate-300" />
+                  <span>GitHub Fork &amp; Push</span>
+                </>
+              )}
+            </button>
 
             {/* Score Badge */}
             <div
               onClick={() => setActiveTab("audit")}
-              className="cursor-pointer flex items-center space-x-2 bg-slate-950 border border-emerald-500/30 px-3 py-1 rounded-lg text-xs font-semibold hover:border-emerald-400 transition-colors"
+              className="hidden lg:flex cursor-pointer items-center space-x-1.5 bg-slate-950 border border-emerald-500/30 px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:border-emerald-400 transition-colors"
             >
-              <span className="text-slate-400">Score AST:</span>
+              <span className="text-slate-400">AST:</span>
               <span className="text-emerald-400 font-mono font-bold">{securityScore}/100</span>
             </div>
 
             {/* AI Assistant Button */}
             <button
               onClick={onOpenAiModal}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white text-xs font-semibold shadow-md shadow-cyan-900/30 transition-all transform hover:scale-105"
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white text-xs font-semibold shadow-md shadow-cyan-900/30 transition-all"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Auditor Gemini AI</span>
+              <span className="hidden sm:inline">Auditor Gemini AI</span>
             </button>
           </div>
         </div>
@@ -178,3 +196,4 @@ export const Navbar: React.FC<NavbarProps> = ({
     </header>
   );
 };
+

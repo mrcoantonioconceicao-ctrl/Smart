@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { FileCode, Play, Copy, Check, ShieldCheck, Cpu, Download, Sparkles, RefreshCw } from "lucide-react";
-import { REPO_INFO } from "../data/contractData";
+import { FileCode, Play, Copy, Check, ShieldCheck, Cpu, Download, Sparkles, RefreshCw, GitFork, Github } from "lucide-react";
+import { REPO_INFO, INITIAL_RUST_CODE } from "../data/contractData";
 
 interface CodeEditorTabProps {
   rustCode: string;
@@ -13,6 +13,7 @@ interface CodeEditorTabProps {
   onRunAudit: () => void;
   onOpenAiModal: () => void;
   onResetToRepo: () => void;
+  onOpenGitHubModal: () => void;
 }
 
 export const CodeEditorTab: React.FC<CodeEditorTabProps> = ({
@@ -26,9 +27,12 @@ export const CodeEditorTab: React.FC<CodeEditorTabProps> = ({
   onRunAudit,
   onOpenAiModal,
   onResetToRepo,
+  onOpenGitHubModal,
 }) => {
   const [activeFile, setActiveFile] = useState<"rust" | "client" | "idl" | "anchor" | "cargo">("rust");
   const [copied, setCopied] = useState(false);
+
+  const isModified = rustCode.trim() !== INITIAL_RUST_CODE.trim();
 
   const getActiveCode = () => {
     switch (activeFile) {
@@ -123,7 +127,7 @@ export const CodeEditorTab: React.FC<CodeEditorTabProps> = ({
           </div>
           <p className="text-sm text-slate-400 mt-1">
             Arquivos exportados do repositório <strong className="text-slate-200">{REPO_INFO.owner}/{REPO_INFO.repo}</strong>.
-            Edite o código em tempo real para re-auditar as regras de segurança AST.
+            Edite o código em tempo real para re-auditar as regras de segurança AST e enviar de volta ao seu fork.
           </p>
         </div>
 
@@ -133,7 +137,18 @@ export const CodeEditorTab: React.FC<CodeEditorTabProps> = ({
             className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5 text-slate-400" />
-            <span>Restaurar Repositório</span>
+            <span>Restaurar</span>
+          </button>
+
+          <button
+            onClick={onOpenGitHubModal}
+            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-indigo-300 hover:text-indigo-200 border border-indigo-500/40 text-xs font-semibold shadow-md transition-all relative"
+          >
+            <Github className="w-3.5 h-3.5" />
+            <span>Push para Fork GitHub</span>
+            {isModified && (
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            )}
           </button>
 
           <button
@@ -141,7 +156,7 @@ export const CodeEditorTab: React.FC<CodeEditorTabProps> = ({
             className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md shadow-emerald-900/30 transition-all"
           >
             <ShieldCheck className="w-4 h-4" />
-            <span>Executar Auditoria AST</span>
+            <span>Auditoria AST</span>
           </button>
 
           <button
@@ -149,10 +164,11 @@ export const CodeEditorTab: React.FC<CodeEditorTabProps> = ({
             className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-900/30 transition-all"
           >
             <Sparkles className="w-4 h-4 text-cyan-300" />
-            <span>Análise DevSecOps Gemini AI</span>
+            <span>Gemini AI</span>
           </button>
         </div>
       </div>
+
 
       {/* Main File Explorer & Code Textarea */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">

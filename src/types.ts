@@ -88,6 +88,38 @@ export interface AnchorIdlInstruction {
   args: any[];
 }
 
+export interface GitHubUser {
+  login: string;
+  id: number;
+  avatar_url: string;
+  name: string;
+  html_url: string;
+  bio?: string;
+  public_repos?: number;
+}
+
+export interface GitHubForkInfo {
+  exists: boolean;
+  fullName?: string;
+  htmlUrl?: string;
+  defaultBranch?: string;
+  isFork?: boolean;
+  parentRepo?: string | null;
+  stars?: number;
+  updatedAt?: string;
+}
+
+export interface GitHubPushResult {
+  success: boolean;
+  commitSha?: string;
+  commitUrl?: string;
+  fileUrl?: string;
+  branch?: string;
+  repo?: string;
+  filePath?: string;
+  error?: string;
+}
+
 export interface AnchorIdl {
   version: string;
   name: string;
