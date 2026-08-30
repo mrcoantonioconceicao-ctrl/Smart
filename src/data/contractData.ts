@@ -238,3 +238,67 @@ export const INITIAL_IDL: AnchorIdl = {
     address: "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
   }
 };
+
+export const INITIAL_README_MD = `# Solana Anchor DevSecOps & AST Security Auditor
+
+Repositório de contratos inteligentes auditados para a blockchain Solana utilizando o framework Anchor.
+
+## 🛡️ Especificações do Contrato \`solana_sandbox_counter\`
+
+- **Framework**: Anchor v0.30.0
+- **Program ID**: \`Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS\`
+- **Alocação de Conta (Rent Space)**: 49 bytes (8 discriminator + 32 authority + 8 count + 1 bump)
+- **Segurança de Acesso**: Isolamento por PDA com \`seeds = [b"counter", authority.key()]\` e \`has_one = authority\`
+- **Proteção Aritmética**: Operações com \`checked_add\` e validação de limites
+
+## 🚀 Como Compilar e Testar
+
+\`\`\`bash
+# Compilar o smart contract
+anchor build
+
+# Executar a suíte de testes TypeScript
+anchor test
+\`\`\`
+
+## 📦 Padrão de Commits
+
+Seguir a especificação Conventional Commits:
+- \`feat(anchor)\`: novas instruções ou recursos
+- \`sec(audit)\`: melhorias e correções de segurança AST
+- \`docs(readme)\`: atualizações na documentação
+- \`ci(devsecops)\`: testes e automações de integração contínua
+`;
+
+export const COMMIT_PRESETS = [
+  {
+    label: "+ Docs & README",
+    type: "docs",
+    message: "docs(readme): update DevSecOps documentation, AST audit benchmarks and architecture specs",
+  },
+  {
+    label: "+ Safe Arithmetic",
+    type: "feat",
+    message: "feat(contract): implement safe checked arithmetic and overflow protection",
+  },
+  {
+    label: "+ Rent Space & PDA",
+    type: "sec",
+    message: "sec(anchor): enforce strict account space calculation (49 bytes) and canonical PDA bumps",
+  },
+  {
+    label: "+ Instructions (dec/reset)",
+    type: "feat",
+    message: "feat(solana): add decrement and reset instructions with error codes",
+  },
+  {
+    label: "+ AST Security Fixes",
+    type: "sec",
+    message: "sec(audit): resolve AST security findings and reach 100/100 benchmark",
+  },
+  {
+    label: "+ CI/DevSecOps",
+    type: "ci",
+    message: "ci(devsecops): add automated clippy, solana-verify and security test suites",
+  },
+];

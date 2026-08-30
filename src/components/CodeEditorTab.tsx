@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FileCode, Play, Copy, Check, ShieldCheck, Cpu, Download, Sparkles, RefreshCw, GitFork, Github } from "lucide-react";
+import { FileCode, Play, Copy, Check, ShieldCheck, Cpu, Download, Sparkles, RefreshCw, GitFork, Github, BookOpen } from "lucide-react";
 import { REPO_INFO, INITIAL_RUST_CODE } from "../data/contractData";
 
 interface CodeEditorTabProps {
@@ -7,6 +7,8 @@ interface CodeEditorTabProps {
   setRustCode: (code: string) => void;
   clientTsCode: string;
   setClientTsCode: (code: string) => void;
+  readmeMd: string;
+  setReadmeMd: (code: string) => void;
   idlJson: string;
   anchorToml: string;
   cargoToml: string;
@@ -21,6 +23,8 @@ export const CodeEditorTab: React.FC<CodeEditorTabProps> = ({
   setRustCode,
   clientTsCode,
   setClientTsCode,
+  readmeMd,
+  setReadmeMd,
   idlJson,
   anchorToml,
   cargoToml,
@@ -29,7 +33,7 @@ export const CodeEditorTab: React.FC<CodeEditorTabProps> = ({
   onResetToRepo,
   onOpenGitHubModal,
 }) => {
-  const [activeFile, setActiveFile] = useState<"rust" | "client" | "idl" | "anchor" | "cargo">("rust");
+  const [activeFile, setActiveFile] = useState<"rust" | "client" | "readme" | "idl" | "anchor" | "cargo">("rust");
   const [copied, setCopied] = useState(false);
 
   const isModified = rustCode.trim() !== INITIAL_RUST_CODE.trim();
@@ -40,6 +44,8 @@ export const CodeEditorTab: React.FC<CodeEditorTabProps> = ({
         return rustCode;
       case "client":
         return clientTsCode;
+      case "readme":
+        return readmeMd;
       case "idl":
         return idlJson;
       case "anchor":
@@ -55,6 +61,8 @@ export const CodeEditorTab: React.FC<CodeEditorTabProps> = ({
       setRustCode(newCode);
     } else if (activeFile === "client") {
       setClientTsCode(newCode);
+    } else if (activeFile === "readme") {
+      setReadmeMd(newCode);
     }
   };
 
@@ -68,6 +76,7 @@ export const CodeEditorTab: React.FC<CodeEditorTabProps> = ({
     const fileNames: Record<string, string> = {
       rust: "lib.rs",
       client: "index.ts",
+      readme: "README.md",
       idl: "solana_sandbox_counter.json",
       anchor: "Anchor.toml",
       cargo: "Cargo.toml",
@@ -200,6 +209,18 @@ export const CodeEditorTab: React.FC<CodeEditorTabProps> = ({
             </button>
 
             <button
+              onClick={() => setActiveFile("readme")}
+              className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-mono transition-all ${
+                activeFile === "readme"
+                  ? "bg-slate-800 text-blue-400 border border-blue-500/30 font-semibold"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5 text-blue-400" />
+              <span>README.md</span>
+            </button>
+
+            <button
               onClick={() => setActiveFile("idl")}
               className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-mono transition-all ${
                 activeFile === "idl"
@@ -284,7 +305,7 @@ export const CodeEditorTab: React.FC<CodeEditorTabProps> = ({
           <textarea
             value={getActiveCode()}
             onChange={handleCodeChange}
-            readOnly={activeFile !== "rust" && activeFile !== "client"}
+            readOnly={activeFile !== "rust" && activeFile !== "client" && activeFile !== "readme"}
             rows={22}
             className="w-full bg-slate-950 text-slate-200 p-4 focus:outline-none resize-none font-mono text-xs leading-relaxed border-none focus:ring-1 focus:ring-indigo-500/50"
             spellCheck={false}

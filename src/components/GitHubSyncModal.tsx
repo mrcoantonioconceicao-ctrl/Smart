@@ -17,17 +17,20 @@ import {
   Layers,
   Copy,
   Check,
-  Code2
+  Code2,
+  BookOpen
 } from "lucide-react";
 import { GitHubUser, GitHubForkInfo, GitHubPushResult } from "../types";
-import { REPO_INFO, INITIAL_RUST_CODE } from "../data/contractData";
+import { REPO_INFO, INITIAL_RUST_CODE, COMMIT_PRESETS } from "../data/contractData";
 
 interface GitHubSyncModalProps {
   isOpen: boolean;
   onClose: () => void;
   rustCode: string;
   clientTsCode: string;
+  readmeMd: string;
   anchorToml: string;
+  cargoToml: string;
   githubToken: string | null;
   setGithubToken: (token: string | null) => void;
   githubUser: GitHubUser | null;
@@ -39,7 +42,9 @@ export const GitHubSyncModal: React.FC<GitHubSyncModalProps> = ({
   onClose,
   rustCode,
   clientTsCode,
+  readmeMd,
   anchorToml,
+  cargoToml,
   githubToken,
   setGithubToken,
   githubUser,
@@ -59,12 +64,20 @@ export const GitHubSyncModal: React.FC<GitHubSyncModalProps> = ({
   // Commit / Push configuration
   const [targetBranch, setTargetBranch] = useState("main");
   const [commitMessage, setCommitMessage] = useState(
-    "feat(anchor): update Rust smart contract with AST security fixes"
+    "feat(anchor): update Rust smart contract with AST security fixes and DevSecOps docs"
   );
-  const [selectedFiles, setSelectedFiles] = useState<{ rust: boolean; client: boolean; anchor: boolean }>({
+  const [selectedFiles, setSelectedFiles] = useState<{
+    rust: boolean;
+    client: boolean;
+    readme: boolean;
+    anchor: boolean;
+    cargo: boolean;
+  }>({
     rust: true,
     client: false,
+    readme: true,
     anchor: false,
+    cargo: false,
   });
 
   // Push status
@@ -262,11 +275,25 @@ export const GitHubSyncModal: React.FC<GitHubSyncModalProps> = ({
           name: "client/index.ts (TypeScript Client)",
         });
       }
+      if (selectedFiles.readme) {
+        filesToPush.push({
+          path: "README.md",
+          content: readmeMd,
+          name: "README.md (DevSecOps Docs)",
+        });
+      }
       if (selectedFiles.anchor) {
         filesToPush.push({
           path: "Anchor.toml",
           content: anchorToml,
           name: "Anchor.toml",
+        });
+      }
+      if (selectedFiles.cargo) {
+        filesToPush.push({
+          path: "programs/solana_sandbox_counter/Cargo.toml",
+          content: cargoToml,
+          name: "Cargo.toml",
         });
       }
 
@@ -702,7 +729,7 @@ export const GitHubSyncModal: React.FC<GitHubSyncModalProps> = ({
                 <span className="text-xs text-slate-400 font-medium block">
                   Selecione os arquivos a incluir no commit:
                 </span>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
                   <label className="flex items-center space-x-2 bg-slate-900 p-2.5 rounded-lg border border-slate-800 cursor-pointer hover:border-slate-700">
                     <input
                       type="checkbox"
@@ -712,7 +739,7 @@ export const GitHubSyncModal: React.FC<GitHubSyncModalProps> = ({
                     />
                     <div className="truncate">
                       <span className="font-bold text-slate-200 block truncate">lib.rs</span>
-                      <span className="text-[10px] text-slate-500 block truncate">programs/solana_sandbox_counter</span>
+                      <span className="text-[10px] text-slate-500 block truncate">programs/.../lib.rs</span>
                     </div>
                   </label>
 
@@ -732,13 +759,39 @@ export const GitHubSyncModal: React.FC<GitHubSyncModalProps> = ({
                   <label className="flex items-center space-x-2 bg-slate-900 p-2.5 rounded-lg border border-slate-800 cursor-pointer hover:border-slate-700">
                     <input
                       type="checkbox"
+                      checked={selectedFiles.readme}
+                      onChange={(e) => setSelectedFiles({ ...selectedFiles, readme: e.target.checked })}
+                      className="rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-0"
+                    />
+                    <div className="truncate">
+                      <span className="font-bold text-blue-400 block truncate">README.md</span>
+                      <span className="text-[10px] text-slate-500 block truncate">Docs &amp; Spec</span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center space-x-2 bg-slate-900 p-2.5 rounded-lg border border-slate-800 cursor-pointer hover:border-slate-700">
+                    <input
+                      type="checkbox"
                       checked={selectedFiles.anchor}
                       onChange={(e) => setSelectedFiles({ ...selectedFiles, anchor: e.target.checked })}
                       className="rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-0"
                     />
                     <div className="truncate">
                       <span className="font-bold text-slate-200 block truncate">Anchor.toml</span>
-                      <span className="text-[10px] text-slate-500 block truncate">Workspace config</span>
+                      <span className="text-[10px] text-slate-500 block truncate">Workspace</span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center space-x-2 bg-slate-900 p-2.5 rounded-lg border border-slate-800 cursor-pointer hover:border-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={selectedFiles.cargo}
+                      onChange={(e) => setSelectedFiles({ ...selectedFiles, cargo: e.target.checked })}
+                      className="rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-0"
+                    />
+                    <div className="truncate">
+                      <span className="font-bold text-slate-200 block truncate">Cargo.toml</span>
+                      <span className="text-[10px] text-slate-500 block truncate">Rust package</span>
                     </div>
                   </label>
                 </div>
@@ -757,7 +810,7 @@ export const GitHubSyncModal: React.FC<GitHubSyncModalProps> = ({
                 </div>
 
                 <div className="sm:col-span-3 space-y-1">
-                  <label className="text-xs text-slate-400 font-medium block">Mensagem do Commit</label>
+                  <label className="text-xs text-slate-400 font-medium block">Mensagem do Commit (Conventional Commits)</label>
                   <div className="relative">
                     <GitCommit className="w-4 h-4 absolute left-3 top-2.5 text-slate-500" />
                     <input
@@ -774,30 +827,23 @@ export const GitHubSyncModal: React.FC<GitHubSyncModalProps> = ({
               <div className="space-y-1.5">
                 <span className="text-[11px] text-slate-500 block">Templates DevSecOps rápidos:</span>
                 <div className="flex flex-wrap gap-1.5">
-                  <button
-                    onClick={() => setCommitMessage("feat(contract): implement safe checked arithmetic and overflow protection")}
-                    className="text-[10px] bg-slate-900 hover:bg-slate-800 border border-slate-800 px-2 py-1 rounded text-cyan-300"
-                  >
-                    + Safe Arithmetic
-                  </button>
-                  <button
-                    onClick={() => setCommitMessage("sec(anchor): enforce strict account space calculation (49 bytes) and canonical PDA bumps")}
-                    className="text-[10px] bg-slate-900 hover:bg-slate-800 border border-slate-800 px-2 py-1 rounded text-emerald-300"
-                  >
-                    + Rent Space &amp; PDA Bumps
-                  </button>
-                  <button
-                    onClick={() => setCommitMessage("refactor(solana): add decrement and reset instructions with error codes")}
-                    className="text-[10px] bg-slate-900 hover:bg-slate-800 border border-slate-800 px-2 py-1 rounded text-purple-300"
-                  >
-                    + Instructions (decrement/reset)
-                  </button>
-                  <button
-                    onClick={() => setCommitMessage("audit(devsecops): resolve AST security findings and pass 100/100 benchmark")}
-                    className="text-[10px] bg-slate-900 hover:bg-slate-800 border border-slate-800 px-2 py-1 rounded text-amber-300"
-                  >
-                    + AST Security Fixes
-                  </button>
+                  {COMMIT_PRESETS.map((preset, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCommitMessage(preset.message)}
+                      className={`text-[10px] bg-slate-900 hover:bg-slate-800 border border-slate-800 px-2 py-1 rounded transition-colors ${
+                        preset.type === "docs"
+                          ? "text-blue-300"
+                          : preset.type === "sec"
+                          ? "text-emerald-300"
+                          : preset.type === "ci"
+                          ? "text-amber-300"
+                          : "text-cyan-300"
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 

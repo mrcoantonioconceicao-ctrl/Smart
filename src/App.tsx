@@ -11,6 +11,7 @@ import { ActiveTab, SolanaWallet, OnChainCounterAccount, TransactionLog, GitHubU
 import {
   INITIAL_RUST_CODE,
   INITIAL_CLIENT_TS,
+  INITIAL_README_MD,
   INITIAL_IDL,
   INITIAL_ANCHOR_TOML,
   INITIAL_CARGO_TOML,
@@ -26,6 +27,7 @@ export default function App() {
   // Code state initialized from mrcoantonioconceicao-ctrl/contratos-inteligentes
   const [rustCode, setRustCode] = useState<string>(INITIAL_RUST_CODE);
   const [clientTsCode, setClientTsCode] = useState<string>(INITIAL_CLIENT_TS);
+  const [readmeMd, setReadmeMd] = useState<string>(INITIAL_README_MD);
   const [idlJson] = useState<string>(JSON.stringify(INITIAL_IDL, null, 2));
   const [anchorToml] = useState<string>(INITIAL_ANCHOR_TOML);
   const [cargoToml] = useState<string>(INITIAL_CARGO_TOML);
@@ -81,6 +83,7 @@ export default function App() {
   const handleResetToRepo = () => {
     setRustCode(INITIAL_RUST_CODE);
     setClientTsCode(INITIAL_CLIENT_TS);
+    setReadmeMd(INITIAL_README_MD);
   };
 
   return (
@@ -105,6 +108,8 @@ export default function App() {
             setRustCode={setRustCode}
             clientTsCode={clientTsCode}
             setClientTsCode={setClientTsCode}
+            readmeMd={readmeMd}
+            setReadmeMd={setReadmeMd}
             idlJson={idlJson}
             anchorToml={anchorToml}
             cargoToml={cargoToml}
@@ -177,7 +182,9 @@ export default function App() {
         onClose={() => setIsGitHubModalOpen(false)}
         rustCode={rustCode}
         clientTsCode={clientTsCode}
+        readmeMd={readmeMd}
         anchorToml={anchorToml}
+        cargoToml={cargoToml}
         githubToken={githubToken}
         setGithubToken={handleSetGithubToken}
         githubUser={githubUser}

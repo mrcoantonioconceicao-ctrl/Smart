@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, Sparkles, Send, ShieldCheck, Loader2, FileCode, Check } from "lucide-react";
+import { X, Sparkles, Send, ShieldCheck, Loader2, RefreshCw } from "lucide-react";
 
 interface AiAuditorModalProps {
   isOpen: boolean;
@@ -52,7 +52,7 @@ export const AiAuditorModal: React.FC<AiAuditorModalProps> = ({ isOpen, onClose,
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-100">DevSecOps CyberSecurity Auditor (Gemini AI)</h3>
-              <p className="text-xs text-slate-400">Análise profunda de vulnerabilidades Solana Anchor com IA</p>
+              <p className="text-xs text-slate-400">Análise profunda de vulnerabilidades Solana Anchor com Gemini 3.7</p>
             </div>
           </div>
           <button
@@ -130,11 +130,22 @@ export const AiAuditorModal: React.FC<AiAuditorModalProps> = ({ isOpen, onClose,
             </div>
           )}
 
-          {/* Error display */}
+          {/* Error display with retry button */}
           {error && (
-            <div className="p-4 bg-rose-950/40 border border-rose-800 text-rose-300 rounded-xl space-y-1">
-              <span className="font-bold block">🚨 Erro de Auditoria AI:</span>
-              <p>{error}</p>
+            <div className="p-4 bg-rose-950/40 border border-rose-800 text-rose-300 rounded-xl space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold flex items-center space-x-1.5">
+                  <span>🚨 Erro de Auditoria AI:</span>
+                </span>
+                <button
+                  onClick={() => handleRunAiAudit()}
+                  className="flex items-center space-x-1 px-3 py-1 bg-rose-900/60 hover:bg-rose-900 text-rose-100 rounded-lg text-xs border border-rose-700 transition-colors"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Tentar Novamente</span>
+                </button>
+              </div>
+              <p className="text-rose-200/90 leading-relaxed">{error}</p>
             </div>
           )}
 

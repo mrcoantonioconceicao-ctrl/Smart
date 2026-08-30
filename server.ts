@@ -364,7 +364,7 @@ async function startServer() {
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) {
         return res.status(400).json({
-          error: "GEMINI_API_KEY não configurada no ambiente.",
+          error: "GEMINI_API_KEY não configurada no ambiente. Configure sua chave no AI Studio para habilitar a auditoria com IA.",
         });
       }
 
@@ -390,12 +390,43 @@ Forneça uma resposta estruturada em Português com:
 3. Boas Práticas DevSecOps Aplicadas ou Recomendadas
 4. Sugestões de Correção em Rust/Anchor com explicações técnicas de cibersegurança.`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt,
-      });
+      // Priority list of models to try in case of temporary high demand (503) or rate limits
+      const modelsToTry = ["gemini-3.7-flash", "gemini-3.1-flash-lite", "gemini-flash-latest"];
+      let lastError: any = null;
+      let textResult: string | null = null;
 
-      return res.json({ result: response.text });
+      for (const modelName of modelsToTry) {
+        try {
+          const response = await ai.models.generateContent({
+            model: modelName,
+            contents: prompt,
+          });
+
+          if (response.text) {
+            textResult = response.text;
+            break;
+          }
+        } catch (modelErr: any) {
+          lastError = modelErr;
+          console.warn(`Tentativa com modelo ${modelName} falhou (${modelErr.message || modelErr}). Tentando próximo modelo...`);
+          // Small pause before trying next fallback model
+          await new Promise((resolve) => setTimeout(resolve, 300));
+        }
+      }
+
+      if (!textResult) {
+        const errorMsg = lastError?.message || "Serviço temporariamente indisponível.";
+        if (errorMsg.includes("503") || errorMsg.includes("high demand") || errorMsg.includes("UNAVAILABLE")) {
+          return res.status(503).json({
+            error: "Os modelos Gemini estão temporariamente com alta demanda. Por favor, aguarde alguns instantes e tente novamente.",
+          });
+        }
+        return res.status(500).json({
+          error: `Erro ao consultar Gemini AI: ${errorMsg}`,
+        });
+      }
+
+      return res.json({ result: textResult });
     } catch (err: any) {
       console.error("Erro na API Gemini AI:", err);
       return res.status(500).json({ error: err.message || "Falha ao processar auditoria com Gemini AI." });
