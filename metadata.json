@@ -1,0 +1,6 @@
+{
+  "name": "Solana Anchor DevSecOps Auditor & IDE",
+  "description": "Análise DevSecOps, auditoria de cibersegurança AST e simulador interativo baseados no repositório contratos-inteligentes de Solana Anchor.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
