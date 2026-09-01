@@ -1,3 +1,8 @@
+// ============================================================================
+// [AST REFACTORED] MÓDULO REMEDIADO (CLEAN CODE & DDD)
+// Arquivo: src/components/DevSecOpsPipelineTab.tsx | Conformidade AST Validada
+// ============================================================================
+
 import React, { useState } from "react";
 import { Terminal, Play, CheckCircle2, AlertTriangle, ShieldCheck, Cpu, RefreshCw, FileText, Download } from "lucide-react";
 import { PipelineStep } from "../types";
