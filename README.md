@@ -1,11 +1,13 @@
-# Solana Anchor DevSecOps & AST Security Auditor IDE 🛡️⚡
+# Solana Anchor DevSecOps, AST & GraphRAG Security Auditor IDE 🛡️⚡
 
 [![Solana Anchor](https://img.shields.io/badge/Solana-Anchor%20v0.30.0-9945FF?style=flat&logo=solana)](https://coral-xyz.github.io/anchor/)
 [![DevSecOps AST Score](https://img.shields.io/badge/Security%20Score-95%2F100-10B981?style=flat&logo=shield)](https://github.com/mrcoantonioconceicao-ctrl/contratos-inteligentes)
+[![MCP Protocol](https://img.shields.io/badge/MCP-Protocol%20v1.0-6366F1?style=flat&logo=modelcontextprotocol)](https://modelcontextprotocol.io)
+[![GraphRAG Engine](https://img.shields.io/badge/GraphRAG-Active-EC4899?style=flat)](https://github.com/mrcoantonioconceicao-ctrl/contratos-inteligentes)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![GitHub Upstream](https://img.shields.io/badge/Upstream-mrcoantonioconceicao--ctrl%2Fcontratos--inteligentes-6366F1?style=flat&logo=github)](https://github.com/mrcoantonioconceicao-ctrl/contratos-inteligentes)
 
-Ambiente integrado de **Engenharia DevSecOps**, **Auditoria Estática AST (Abstract Syntax Tree)**, **Simulador dApp On-Chain Solana** e **Pipeline de Sincronização e Push com GitHub** baseado no repositório oficial [`mrcoantonioconceicao-ctrl/contratos-inteligentes`](https://github.com/mrcoantonioconceicao-ctrl/contratos-inteligentes).
+Ambiente integrado de **Engenharia DevSecOps**, **Auditoria Estática AST (Abstract Syntax Tree)**, **Servidor MCP (Model Context Protocol)**, **Serviço GraphRAG para Riscos Cross-Instruction**, **Simulador dApp On-Chain Solana** e **Pipeline de Sincronização e Push com GitHub** baseado no repositório oficial [`mrcoantonioconceicao-ctrl/contratos-inteligentes`](https://github.com/mrcoantonioconceicao-ctrl/contratos-inteligentes).
 
 ---
 
@@ -14,6 +16,8 @@ Ambiente integrado de **Engenharia DevSecOps**, **Auditoria Estática AST (Abstr
 - [Visão Geral](#-visão-geral)
 - [Arquitetura do Smart Contract Anchor](#-arquitetura-do-smart-contract-anchor)
 - [Mecanismo de Auditoria de Cibersegurança AST](#-mecanismo-de-auditoria-de-cibersegurança-ast)
+- [Serviço GraphRAG (Grafo de Dependências Cross-Instruction)](#-serviço-graphrag-grafo-de-dependências-cross-instruction)
+- [Servidor MCP (Model Context Protocol)](#-servidor-mcp-model-context-protocol)
 - [Simulador Interativo On-Chain Solana](#-simulador-interativo-on-chain-solana)
 - [Pipeline GitHub Fork & Commit Push](#-pipeline-github-fork--commit-push)
 - [Auditor Especialista Gemini AI](#-auditor-especialista-gemini-ai)
@@ -29,8 +33,10 @@ Este projeto foi construído para elevar a maturidade de cibersegurança e autom
 
 1. **Editor & Inspetor de Smart Contracts**: Edição em tempo real de Rust (`programs/solana_sandbox_counter/src/lib.rs`), testes TypeScript (`client/index.ts`), especificações de IDL (`target/idl/solana_sandbox_counter.json`), `Anchor.toml`, `Cargo.toml` e documentação `README.md`.
 2. **Motor AST Determinístico**: Inspeção das árvores de sintaxe e atributos Anchor com pontuação de segurança instantânea, detecção de vulnerabilidades e cálculo de espaço de aluguel (Rent-Exempt).
-3. **Simulador de Transações Web3/Anchor**: Geração de chaves Ed25519, derivação determinística de PDAs (`seeds = [b"counter", authority]`), verificação de bump canônico e simulação de RPCs on-chain com logs e medição de Compute Units (CU).
-4. **DevSecOps Git Integration**: Autenticação com GitHub (OAuth e PAT), detecção e criação automática de forks de `mrcoantonioconceicao-ctrl/contratos-inteligentes` e envio de commits com diff de código e abertura de Pull Requests.
+3. **Serviço GraphRAG de Dependências**: Mapeamento de nós (*PROGRAM*, *ACCOUNT*, *INSTRUCTION*, *SIGNER*) e arestas (*MUTATES*, *CPI_CALLS*, *REQUIRES_SIGNER*) para identificar riscos cross-instruction e falhas de isolamento de PDAs.
+4. **Servidor MCP Integrado (`@modelcontextprotocol/sdk`)**: Exposição padronizada das ferramentas de auditoria AST, GraphRAG, simulação de instruções SVM e criação de Pull Requests no GitHub para agentes de IA.
+5. **Simulador de Transações Web3/Anchor**: Geração de chaves Ed25519, derivação determinística de PDAs (`seeds = [b"counter", authority]`), verificação de bump canônico e simulação de RPCs on-chain com logs e medição de Compute Units (CU).
+6. **DevSecOps Git Integration**: Autenticação com GitHub (OAuth e PAT), detecção e criação automática de forks de `mrcoantonioconceicao-ctrl/contratos-inteligentes` e envio de commits com diff de código e abertura de Pull Requests.
 
 ---
 
@@ -87,6 +93,45 @@ O mecanismo analisa as regras de segurança fundamentais recomendadas pelos fram
 
 ---
 
+## 🕸️ Serviço GraphRAG (Grafo de Dependências Cross-Instruction)
+
+Localizado em `src/services/graphRAGService.ts`, este módulo gera uma representação em grafo da estrutura do contrato inteligente para analisar vulnerabilidades de reentrância, concorrência e isolamento de contas.
+
+### Modelagem do Grafo:
+- **Nós (Nodes)**: `PROGRAM`, `ACCOUNT`, `INSTRUCTION`, `SIGNER`.
+- **Arestas (Edges)**:
+  - `MUTATES`: Instrução que modifica o estado da conta (`#[account(mut)]`).
+  - `CPI_CALLS`: Invocação cruzada entre programas (`invoke`, `invoke_signed`, `cpi::`).
+  - `REQUIRES_SIGNER`: Validação de assinatura obrigatória.
+  - `DERIVED_FROM`: Derivação de conta PDA a partir do Program ID e sementes.
+
+### Regras de Análise GraphRAG (`queryGraphVulnerabilities`):
+- `GRAPH-VULN-01`: Identifica mutações de estado sem atestação de `Signer`.
+- `GRAPH-VULN-02`: Detecta corrida de estado compartilhado alterado por múltiplas instruções.
+- `GRAPH-VULN-03`: Alerta sobre invocações CPI simultâneas à mutação local de estado.
+- `GRAPH-VULN-04`: Valida isolamento de PDAs e presença da restrição `has_one = authority`.
+
+---
+
+## 🔌 Servidor MCP (Model Context Protocol)
+
+Localizado em `src/mcp/server.ts`, o servidor expõe as capacidades do IDE para agentes externos via **STDIO** e pela API HTTP (`GET /api/mcp/info`).
+
+### Ferramentas Expostas:
+
+1. **`audit_anchor_ast`**: Executa auditoria estática AST no código Rust Anchor.
+2. **`analyze_graph_rag_dependencies`**: Gera o grafo de dependências e avalia riscos cross-instruction.
+3. **`derive_pda`**: Deriva o endereço PDA e o bump canônico determinístico.
+4. **`simulate_svm_instruction`**: Simula instruções SVM (`initialize`, `increment`, `decrement`, `reset`).
+5. **`create_github_pr`**: Realiza commit atômico no fork do usuário e gera o link para Pull Request.
+
+#### Como Iniciar o Servidor MCP via CLI:
+```bash
+npx tsx src/mcp/server.ts
+```
+
+---
+
 ## ⚡ Simulador Interativo On-Chain Solana
 
 O simulador emula fielmente o ambiente de execução Anchor e runtime Solana:
@@ -138,12 +183,16 @@ Integrado através do backend Express (`/api/ai-analyze`), permitindo auditorias
 ├── src/
 │   ├── components/                # Componentes React (Editor, Audit, Simulator, GitHubSync)
 │   ├── data/                      # Dados do contrato e repositório inicial
+│   ├── mcp/
+│   │   └── server.ts              # Servidor MCP (Model Context Protocol) oficial
+│   ├── services/
+│   │   └── graphRAGService.ts     # Serviço GraphRAG de Grafo de Dependências
 │   ├── utils/                     # Motor de auditoria AST e simulador Solana
 │   ├── types.ts                   # Definições TypeScript globais
 │   ├── App.tsx                    # Shell principal do IDE
 │   └── main.tsx                   # Ponto de entrada React
 ├── Anchor.toml                    # Configurações de workspace e clusters Solana
-├── server.ts                      # Backend Express (OAuth, GitHub REST Proxy, Gemini AI)
+├── server.ts                      # Backend Express (OAuth, GitHub REST Proxy, Gemini AI, MCP Info)
 ├── README.md                      # Documentação completa
 └── metadata.json                  # Metadados e permissões da aplicação
 ```
@@ -156,9 +205,10 @@ Recomenda-se o padrão [Conventional Commits](https://www.conventionalcommits.or
 
 - `feat(anchor)`: Novas instruções de smart contract ou métodos cliente
 - `sec(audit)`: Correções de segurança AST, proteção de overflow ou checagem de bump
+- `feat(mcp)`: Novas ferramentas expostas no Servidor MCP
+- `feat(graphrag)`: Regras e queries no grafo de dependências
 - `docs(readme)`: Atualizações na documentação ou arquitetura de segurança
 - `refactor(solana)`: Melhorias no código Rust sem alterar comportamento externo
-- `ci(devsecops)`: Configurações de pipeline CI/CD, clippy ou solana-verify
 
 ---
 
@@ -175,6 +225,9 @@ npm install
 
 # Iniciar servidor de desenvolvimento (Frontend Vite + Backend Express na porta 3000)
 npm run dev
+
+# Executar o Servidor MCP via STDIO
+npx tsx src/mcp/server.ts
 ```
 
 ### Variáveis de Ambiente Opcionais (`.env`)

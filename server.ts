@@ -362,9 +362,9 @@ async function startServer() {
   app.post("/api/ai-analyze", async (req, res) => {
     try {
       const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey) {
+      if (!apiKey || apiKey === "MY_GEMINI_API_KEY" || apiKey.includes("MY_GEMINI")) {
         return res.status(400).json({
-          error: "GEMINI_API_KEY não configurada no ambiente. Configure sua chave no AI Studio para habilitar a auditoria com IA.",
+          error: "Chave GEMINI_API_KEY não configurada. Por favor, adicione sua chave de API nas configurações do AI Studio (Menu Settings / Secrets).",
         });
       }
 
@@ -391,7 +391,7 @@ Forneça uma resposta estruturada em Português com:
 4. Sugestões de Correção em Rust/Anchor com explicações técnicas de cibersegurança.`;
 
       // Priority list of models to try in case of temporary high demand (503) or rate limits
-      const modelsToTry = ["gemini-3.7-flash", "gemini-3.1-flash-lite", "gemini-flash-latest"];
+      const modelsToTry = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-3.7-flash"];
       let lastError: any = null;
       let textResult: string | null = null;
 
@@ -416,6 +416,15 @@ Forneça uma resposta estruturada em Português com:
 
       if (!textResult) {
         const errorMsg = lastError?.message || "Serviço temporariamente indisponível.";
+        if (
+          errorMsg.includes("API_KEY_INVALID") ||
+          errorMsg.includes("API key not valid") ||
+          errorMsg.includes("INVALID_ARGUMENT")
+        ) {
+          return res.status(400).json({
+            error: "A chave de API GEMINI_API_KEY fornecida não é válida. Por favor, adicione uma chave do Gemini válida nas configurações de Secrets do AI Studio.",
+          });
+        }
         if (errorMsg.includes("503") || errorMsg.includes("high demand") || errorMsg.includes("UNAVAILABLE")) {
           return res.status(503).json({
             error: "Os modelos Gemini estão temporariamente com alta demanda. Por favor, aguarde alguns instantes e tente novamente.",
@@ -429,8 +438,51 @@ Forneça uma resposta estruturada em Português com:
       return res.json({ result: textResult });
     } catch (err: any) {
       console.error("Erro na API Gemini AI:", err);
-      return res.status(500).json({ error: err.message || "Falha ao processar auditoria com Gemini AI." });
+      const errStr = err?.message || String(err);
+      if (errStr.includes("API_KEY_INVALID") || errStr.includes("API key not valid") || errStr.includes("INVALID_ARGUMENT")) {
+        return res.status(400).json({
+          error: "A chave de API GEMINI_API_KEY fornecida não é válida. Por favor, atualize sua chave de API nas configurações do AI Studio.",
+        });
+      }
+      return res.status(500).json({ error: errStr || "Falha ao processar auditoria com Gemini AI." });
     }
+  });
+
+  // MCP Server Metadata API
+  app.get("/api/mcp/info", (req, res) => {
+    res.json({
+      name: "Solana Anchor DevSecOps Auditor & IDE MCP",
+      version: "1.0.0",
+      protocol: "Model Context Protocol (MCP)",
+      serverFile: "src/mcp/server.ts",
+      tools: [
+        {
+          name: "audit_anchor_ast",
+          description: "Audita um contrato inteligente em Rust (Anchor) aplicando regras de cibersegurança AST.",
+          parameters: ["code"],
+        },
+        {
+          name: "analyze_graph_rag_dependencies",
+          description: "Mapeia as dependências de um contrato Anchor em Grafo (Nós: Programas/Contas/Instruções; Arestas: MUTATES, CPI_CALLS) e avalia riscos cross-instruction.",
+          parameters: ["code"],
+        },
+        {
+          name: "derive_pda",
+          description: "Deriva o endereço de conta PDA e o bump seed canônico para uma conta Solana.",
+          parameters: ["authorityPubkey", "programId", "seed"],
+        },
+        {
+          name: "simulate_svm_instruction",
+          description: "Simula a execução de uma instrução Solana (SVM) no runtime do Anchor.",
+          parameters: ["instruction", "authority", "pdaAddress", "currentCount", "bump"],
+        },
+        {
+          name: "create_github_pr",
+          description: "Envia um commit com código alterado para o repositório fork no GitHub e gera link para PR.",
+          parameters: ["githubToken", "owner", "repo", "branch", "filePath", "fileContent", "commitMessage", "upstreamOwner"],
+        },
+      ],
+    });
   });
 
   // Health check
