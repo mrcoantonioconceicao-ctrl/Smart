@@ -7,6 +7,7 @@ import { DevSecOpsPipelineTab } from "./components/DevSecOpsPipelineTab";
 import { AiAuditorModal } from "./components/AiAuditorModal";
 import { TransactionLogsModal } from "./components/TransactionLogsModal";
 import { GitHubSyncModal } from "./components/GitHubSyncModal";
+import { BpmnAndTestsModal } from "./components/BpmnAndTestsModal";
 import { ActiveTab, SolanaWallet, OnChainCounterAccount, TransactionLog, GitHubUser } from "./types";
 import {
   INITIAL_RUST_CODE,
@@ -74,6 +75,7 @@ export default function App() {
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
   const [isGitHubModalOpen, setIsGitHubModalOpen] = useState(false);
+  const [isBpmnModalOpen, setIsBpmnModalOpen] = useState(false);
 
   // Perform real-time AST Security Audit whenever rustCode changes
   const auditResult = useMemo(() => {
@@ -98,6 +100,7 @@ export default function App() {
         onOpenAiModal={() => setIsAiModalOpen(true)}
         githubUser={githubUser}
         onOpenGitHubModal={() => setIsGitHubModalOpen(true)}
+        onOpenBpmnModal={() => setIsBpmnModalOpen(true)}
       />
 
       {/* Main Container */}
@@ -189,6 +192,12 @@ export default function App() {
         setGithubToken={handleSetGithubToken}
         githubUser={githubUser}
         setGithubUser={handleSetGithubUser}
+      />
+
+      <BpmnAndTestsModal
+        isOpen={isBpmnModalOpen}
+        onClose={() => setIsBpmnModalOpen(false)}
+        currentCode={rustCode}
       />
     </div>
   );

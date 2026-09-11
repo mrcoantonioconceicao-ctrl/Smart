@@ -485,6 +485,23 @@ Forneça uma resposta estruturada em Português com:
     });
   });
 
+  // SOA Service Registry Catalog API
+  app.get("/api/soa/catalog", (req, res) => {
+    res.json({
+      architecture: "Service-Oriented Architecture (SOA) & Domain-Driven Design (DDD)",
+      servicesCount: 7,
+      services: [
+        { id: "srv-ast-auditor-v1", name: "AST Smart Contract Auditor Service", status: "ONLINE", protocol: "IN_MEMORY" },
+        { id: "srv-graph-rag-v1", name: "GraphRAG Dependency Mapping & Cross-Instruction Service", status: "ONLINE", protocol: "IN_MEMORY" },
+        { id: "srv-svm-simulator-v1", name: "Solana SVM Instruction Simulation Service", status: "ONLINE", protocol: "IN_MEMORY" },
+        { id: "srv-mcp-protocol-v1", name: "Model Context Protocol (MCP) Server Service", status: "ONLINE", protocol: "MCP_STDIO" },
+        { id: "srv-github-sync-v1", name: "GitHub REST API Sync Service", status: "ONLINE", protocol: "REST" },
+        { id: "srv-gemini-ai-v1", name: "Gemini AI Heuristic Code Audit Proxy", status: "ONLINE", protocol: "REST" },
+        { id: "srv-bpmn-engine-v1", name: "BPMN 2.0 DevSecOps Pipeline Engine", status: "ONLINE", protocol: "IN_MEMORY" },
+      ],
+    });
+  });
+
   // Health check
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", service: "Solana Anchor DevSecOps Auditor" });

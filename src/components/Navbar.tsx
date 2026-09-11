@@ -1,5 +1,5 @@
 import React from "react";
-import { Shield, Code2, Cpu, Terminal, Sparkles, ExternalLink, Activity, Github } from "lucide-react";
+import { Shield, Code2, Cpu, Terminal, Sparkles, ExternalLink, Github, Workflow } from "lucide-react";
 import { ActiveTab, GitHubUser } from "../types";
 import { REPO_INFO } from "../data/contractData";
 
@@ -12,6 +12,7 @@ interface NavbarProps {
   onOpenAiModal: () => void;
   githubUser: GitHubUser | null;
   onOpenGitHubModal: () => void;
+  onOpenBpmnModal: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -23,6 +24,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAiModal,
   githubUser,
   onOpenGitHubModal,
+  onOpenBpmnModal,
 }) => {
   return (
     <header className="bg-slate-900 border-b border-slate-800 text-slate-100 sticky top-0 z-40 shadow-xl">
@@ -109,6 +111,16 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Controls Right */}
           <div className="flex items-center space-x-2.5">
+            {/* BPMN & Tests Suite Button */}
+            <button
+              onClick={onOpenBpmnModal}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-950 border border-indigo-500/40 hover:border-indigo-400 text-indigo-300 text-xs font-semibold shadow-sm transition-all"
+              title="Acessar Suíte de Testes, BPMN 2.0, DDD & SOA"
+            >
+              <Workflow className="w-3.5 h-3.5 text-indigo-400" />
+              <span className="hidden sm:inline">Testes &amp; BPMN</span>
+            </button>
+
             {/* GitHub Sync Button */}
             <button
               onClick={onOpenGitHubModal}

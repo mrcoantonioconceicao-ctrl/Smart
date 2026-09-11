@@ -239,9 +239,9 @@ export const INITIAL_IDL: AnchorIdl = {
   }
 };
 
-export const INITIAL_README_MD = `# Solana Anchor DevSecOps & AST Security Auditor
+export const INITIAL_README_MD = `# Solana Anchor DevSecOps, AST & GraphRAG Security Auditor
 
-Repositório de contratos inteligentes auditados para a blockchain Solana utilizando o framework Anchor.
+Repositório de contratos inteligentes auditados para a blockchain Solana utilizando o framework Anchor, Servidor MCP, GraphRAG, DDD, SOA e BPMN 2.0.
 
 ## 🛡️ Especificações do Contrato \`solana_sandbox_counter\`
 
@@ -250,6 +250,7 @@ Repositório de contratos inteligentes auditados para a blockchain Solana utiliz
 - **Alocação de Conta (Rent Space)**: 49 bytes (8 discriminator + 32 authority + 8 count + 1 bump)
 - **Segurança de Acesso**: Isolamento por PDA com \`seeds = [b"counter", authority.key()]\` e \`has_one = authority\`
 - **Proteção Aritmética**: Operações com \`checked_add\` e validação de limites
+- **Arquitetura**: DDD (Domain-Driven Design), SOA (Service-Oriented Architecture), BPMN 2.0 e Servidor MCP
 
 ## 🚀 Como Compilar e Testar
 
@@ -259,46 +260,64 @@ anchor build
 
 # Executar a suíte de testes TypeScript
 anchor test
+
+# Executar o Servidor MCP via STDIO
+npx tsx src/mcp/server.ts
 \`\`\`
 
 ## 📦 Padrão de Commits
 
 Seguir a especificação Conventional Commits:
-- \`feat(anchor)\`: novas instruções ou recursos
+- \`feat(anchor)\`: novas instruções ou recursos do contrato
 - \`sec(audit)\`: melhorias e correções de segurança AST
-- \`docs(readme)\`: atualizações na documentação
-- \`ci(devsecops)\`: testes e automações de integração contínua
+- \`feat(mcp)\`: ferramentas atômicas registradas no Servidor MCP
+- \`feat(graphrag)\`: mapeamento de grafo e análises cross-instruction
+- \`refactor(ddd)\`: modelos de domínio DDD e Value Objects
+- \`feat(soa)\`: registro e catálogo de microsserviços SOA
+- \`feat(bpmn)\`: orquestração de processos BPMN 2.0 e gerador XML
+- \`test(suite)\`: suíte de testes unitários e de integração automatizados
+- \`docs(readme)\`: atualizações na documentação e arquitetura
 `;
 
 export const COMMIT_PRESETS = [
   {
     label: "+ Docs & README",
     type: "docs",
-    message: "docs(readme): update DevSecOps documentation, AST audit benchmarks and architecture specs",
+    message: "docs(readme): update DevSecOps documentation, DDD/SOA architecture and BPMN process specs",
   },
   {
-    label: "+ Safe Arithmetic",
+    label: "+ MCP Server Tools",
     type: "feat",
-    message: "feat(contract): implement safe checked arithmetic and overflow protection",
+    message: "feat(mcp): expose AST audit, GraphRAG analysis, SVM simulator and GitHub PR tools via MCP",
   },
   {
-    label: "+ Rent Space & PDA",
-    type: "sec",
-    message: "sec(anchor): enforce strict account space calculation (49 bytes) and canonical PDA bumps",
-  },
-  {
-    label: "+ Instructions (dec/reset)",
+    label: "+ GraphRAG & Cross-Instruction",
     type: "feat",
-    message: "feat(solana): add decrement and reset instructions with error codes",
+    message: "feat(graphrag): implement dependency graph mapping and cross-instruction risk analyzer",
   },
   {
-    label: "+ AST Security Fixes",
+    label: "+ DDD & Value Objects",
+    type: "refactor",
+    message: "refactor(ddd): introduce ProgramAddress, PdaSeed and AccountSpace domain value objects",
+  },
+  {
+    label: "+ SOA Service Catalog",
+    type: "feat",
+    message: "feat(soa): register microservices catalog with /api/soa/catalog health endpoint",
+  },
+  {
+    label: "+ BPMN 2.0 Engine",
+    type: "feat",
+    message: "feat(bpmn): implement BPMN 2.0 process workflow execution and OMG XML schema exporter",
+  },
+  {
+    label: "+ Automated Test Suite",
+    type: "test",
+    message: "test(suite): add 100% automated unit and integration test runner with UI reporting",
+  },
+  {
+    label: "+ Safe Arithmetic & PDA",
     type: "sec",
-    message: "sec(audit): resolve AST security findings and reach 100/100 benchmark",
-  },
-  {
-    label: "+ CI/DevSecOps",
-    type: "ci",
-    message: "ci(devsecops): add automated clippy, solana-verify and security test suites",
+    message: "sec(anchor): enforce strict 49-byte account space, canonical PDA bump and checked arithmetic",
   },
 ];
