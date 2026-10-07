@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Shield, ShieldAlert, CheckCircle2, AlertTriangle, Info, Lock, ChevronRight, Calculator, FileCheck, Layers, Sparkles } from "lucide-react";
+import { Shield, ShieldAlert, CheckCircle2, AlertTriangle, Info, Lock, ChevronRight, Calculator, FileCheck, Layers, Sparkles, Bug, Wand2, ArrowRight } from "lucide-react";
 import { SecurityFinding, AccountSpaceCalculation, AstNode, AuditSeverity } from "../types";
+import { useAppConfig } from "../context/AppContext";
 
 interface SecurityAuditTabProps {
   score: number;
@@ -8,6 +9,7 @@ interface SecurityAuditTabProps {
   spaceCalc: AccountSpaceCalculation;
   astNodes: AstNode[];
   onOpenAiModal: () => void;
+  onOpenFuzzingModal?: () => void;
 }
 
 export const SecurityAuditTab: React.FC<SecurityAuditTabProps> = ({
@@ -16,7 +18,9 @@ export const SecurityAuditTab: React.FC<SecurityAuditTabProps> = ({
   spaceCalc,
   astNodes,
   onOpenAiModal,
+  onOpenFuzzingModal,
 }) => {
+  const { viewMode, t } = useAppConfig();
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [expandedAstNode, setExpandedAstNode] = useState<string | null>(astNodes[0]?.name || null);
 
@@ -72,66 +76,122 @@ export const SecurityAuditTab: React.FC<SecurityAuditTabProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Top DevSecOps Dashboard Summary Header */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* Main Score Card */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl flex items-center justify-between col-span-1 md:col-span-2 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
-          <div>
-            <div className="flex items-center space-x-2">
-              <Shield className="w-6 h-6 text-emerald-400" />
-              <h3 className="text-base font-bold text-slate-100">Score de Segurança AST DevSecOps</h3>
+      {/* Simple View Banner vs Advanced Header */}
+      {viewMode === "simple" ? (
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl relative overflow-hidden">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="flex items-start space-x-4">
+              <div className={`p-3 rounded-2xl border ${
+                score >= 80 
+                  ? "bg-emerald-950/80 border-emerald-500/40 text-emerald-400" 
+                  : "bg-rose-950/80 border-rose-500/40 text-rose-400"
+              }`}>
+                {score >= 80 ? <CheckCircle2 className="w-8 h-8" /> : <ShieldAlert className="w-8 h-8" />}
+              </div>
+              <div>
+                <h3 className="text-xl font-extrabold text-slate-100">
+                  {score >= 80 ? t.simpleSecuritySafeTitle : t.simpleSecurityWarningTitle}
+                </h3>
+                <p className="text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                  {score >= 80 ? t.simpleSecuritySafeDesc : t.simpleSecurityWarningDesc}
+                </p>
+                <div className="mt-3 flex items-center space-x-3 text-xs font-semibold">
+                  <span className="px-2.5 py-1 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800">
+                    ✓ {passedCount}/{findings.length} {t.rulesPassed}
+                  </span>
+                  {criticalCount > 0 && (
+                    <span className="px-2.5 py-1 rounded-full bg-rose-950 text-rose-400 border border-rose-800">
+                      🚨 {criticalCount} {t.criticalAlerts}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
-            <p className="text-xs text-slate-400 mt-1 max-w-sm">
-              Análise estática de Árvore Sintática Abstrata (AST) baseada no padrão de auditoria Solana Architect.
-            </p>
-            <div className="mt-3 flex items-center space-x-4 text-xs font-medium">
-              <span className="text-emerald-400 font-mono">✓ {passedCount}/{findings.length} Regras Aprovadas</span>
-              {criticalCount > 0 && <span className="text-rose-400 font-mono">🚨 {criticalCount} Críticos</span>}
-              {mediumCount > 0 && <span className="text-amber-400 font-mono">⚠️ {mediumCount} Alerta</span>}
+
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+              <button
+                onClick={onOpenAiModal}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-emerald-900/30 transition-all flex items-center justify-center space-x-2"
+              >
+                <Sparkles className="w-4 h-4 text-cyan-200" />
+                <span>{t.simpleActionAutoFix}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Advanced DevSecOps Dashboard Header */
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Main Score Card */}
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl flex items-center justify-between col-span-1 md:col-span-2 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+            <div>
+              <div className="flex items-center space-x-2">
+                <Shield className="w-6 h-6 text-emerald-400" />
+                <h3 className="text-base font-bold text-slate-100">{t.auditHeaderTitle}</h3>
+              </div>
+              <p className="text-xs text-slate-400 mt-1 max-w-sm">
+                {t.auditHeaderDesc}
+              </p>
+              <div className="mt-3 flex items-center space-x-4 text-xs font-medium">
+                <span className="text-emerald-400 font-mono">✓ {passedCount}/{findings.length} {t.rulesPassed}</span>
+                {criticalCount > 0 && <span className="text-rose-400 font-mono">🚨 {criticalCount} {t.criticalAlerts}</span>}
+                {mediumCount > 0 && <span className="text-amber-400 font-mono">⚠️ {mediumCount} {t.warningAlerts}</span>}
+              </div>
+            </div>
+
+            <div className="flex flex-col items-center justify-center bg-slate-950 border border-emerald-500/30 rounded-2xl p-4 min-w-[100px] shadow-inner">
+              <span className="text-3xl font-black font-mono text-emerald-400">{score}</span>
+              <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">de 100</span>
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center bg-slate-950 border border-emerald-500/30 rounded-2xl p-4 min-w-[100px] shadow-inner">
-            <span className="text-3xl font-black font-mono text-emerald-400">{score}</span>
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">de 100</span>
-          </div>
-        </div>
-
-        {/* Account Space Quick Summary */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Espaço de Conta (Rent)</span>
-            <Calculator className="w-4 h-4 text-cyan-400" />
-          </div>
-          <div className="mt-2">
-            <div className="text-2xl font-bold font-mono text-cyan-400">{spaceCalc.totalBytes} Bytes</div>
-            <p className="text-xs text-slate-400 mt-0.5">8 Discriminator + 32 Pubkey + 8 u64 + 1 bump</p>
-          </div>
-          <div className="text-[11px] text-slate-300 mt-2 font-mono bg-slate-950 p-2 rounded border border-slate-800">
-            Reserva Mínima: ~{spaceCalc.rentLamportsEstimate} SOL
-          </div>
-        </div>
-
-        {/* AI Action Card */}
-        <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-cyan-950 border border-indigo-800/50 rounded-xl p-5 shadow-xl flex flex-col justify-between">
-          <div>
-            <div className="flex items-center space-x-2">
-              <Sparkles className="w-5 h-5 text-cyan-300" />
-              <h4 className="text-sm font-bold text-slate-100">Deep Audit Gemini AI</h4>
+          {/* Account Space Quick Summary */}
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t.accountSpaceTitle}</span>
+              <Calculator className="w-4 h-4 text-cyan-400" />
             </div>
-            <p className="text-xs text-slate-300 mt-1">
-              Peça uma auditoria formal detalhada de vulnerabilidade com explicações em português.
-            </p>
+            <div className="mt-2">
+              <div className="text-2xl font-bold font-mono text-cyan-400">{spaceCalc.totalBytes} Bytes</div>
+              <p className="text-xs text-slate-400 mt-0.5">{t.spaceDetail}</p>
+            </div>
+            <div className="text-[11px] text-slate-300 mt-2 font-mono bg-slate-950 p-2 rounded border border-slate-800">
+              {t.minRentReserve}: ~{spaceCalc.rentLamportsEstimate} SOL
+            </div>
           </div>
-          <button
-            onClick={onOpenAiModal}
-            className="mt-3 w-full py-2 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all shadow-md shadow-indigo-900/40"
-          >
-            Executar Auditoria AI
-          </button>
+
+          {/* AI & Fuzzing Action Card */}
+          <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-cyan-950 border border-indigo-800/50 rounded-xl p-5 shadow-xl flex flex-col justify-between">
+            <div>
+              <div className="flex items-center space-x-2">
+                <Sparkles className="w-5 h-5 text-cyan-300" />
+                <h4 className="text-sm font-bold text-slate-100">{t.deepAuditTitle}</h4>
+              </div>
+              <p className="text-xs text-slate-300 mt-1">
+                {t.deepAuditDesc}
+              </p>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                onClick={onOpenAiModal}
+                className="py-1.5 px-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all shadow-md shadow-indigo-900/40 text-center"
+              >
+                {t.execAiAudit}
+              </button>
+              {onOpenFuzzingModal && (
+                <button
+                  onClick={onOpenFuzzingModal}
+                  className="py-1.5 px-2.5 rounded-lg bg-slate-950 border border-rose-500/50 hover:border-rose-400 text-rose-300 text-xs font-semibold transition-all shadow-md flex items-center justify-center space-x-1"
+                >
+                  <Bug className="w-3.5 h-3.5 text-rose-400" />
+                  <span>Fuzzing Report</span>
+                </button>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Categories Filter Bar */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 flex items-center space-x-2 overflow-x-auto text-xs">

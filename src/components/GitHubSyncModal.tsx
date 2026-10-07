@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { GitHubUser, GitHubForkInfo, GitHubPushResult } from "../types";
 import { REPO_INFO, INITIAL_RUST_CODE, COMMIT_PRESETS } from "../data/contractData";
+import { useAppConfig } from "../context/AppContext";
 
 interface GitHubSyncModalProps {
   isOpen: boolean;
@@ -50,6 +51,7 @@ export const GitHubSyncModal: React.FC<GitHubSyncModalProps> = ({
   githubUser,
   setGithubUser,
 }) => {
+  const { viewMode, t } = useAppConfig();
   const [authMode, setAuthMode] = useState<"oauth" | "pat">("oauth");
   const [patInput, setPatInput] = useState("");
   const [isLoadingAuth, setIsLoadingAuth] = useState(false);
@@ -380,14 +382,14 @@ export const GitHubSyncModal: React.FC<GitHubSyncModalProps> = ({
             <div>
               <div className="flex items-center space-x-2">
                 <h3 className="text-base font-bold text-slate-100">
-                  GitHub Fork &amp; Push Sincronizador
+                  {t.githubForkModalTitle}
                 </h3>
                 <span className="text-[10px] bg-indigo-950 text-indigo-300 px-2 py-0.5 rounded border border-indigo-800 font-mono">
                   {REPO_INFO.repo}
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Autentique-se no GitHub para enviar seu contrato inteligente modificado para o seu próprio fork
+                {t.githubForkModalDesc}
               </p>
             </div>
           </div>

@@ -18,6 +18,16 @@ import {
 } from "../domain/smartContractDomain";
 import { BpmnDevSecOpsWorkflowEngine } from "../services/bpmnWorkflowService";
 import { SoaCatalogRegistry } from "../services/soaCatalogService";
+import { runPropertyBasedFuzzing } from "../services/fuzzingEngine";
+import { verifyFormalProperties } from "../services/formalVerificationEngine";
+import { analyzeCpiDeepRisks } from "../services/cpiDeepAnalyzerService";
+import {
+  PropertyFuzzer,
+  runFuzzer,
+  generateExtremeNumericalInputs,
+  generateExtremeAccountStates,
+  BOUNDARY_VALUES,
+} from "../utils/fuzzer";
 
 export interface TestResultItem {
   suite: string;
@@ -213,16 +223,79 @@ export class TestRunner {
     });
 
     // --- SUITE 6: SOA CATALOG TESTS ---
-    executeTest("SOA Registry", "Deve registrar e fornecer contratos para os 7 serviços do sistema", () => {
+    executeTest("SOA Registry", "Deve registrar e fornecer contratos para os serviços do sistema", () => {
       const registry = SoaCatalogRegistry.getInstance();
       const services = registry.getAllServices();
-      if (services.length < 7) {
-        throw new Error(`Esperados pelo menos 7 serviços SOA, encontrados: ${services.length}`);
+      if (services.length < 10) {
+        throw new Error(`Esperados pelo menos 10 serviços SOA, encontrados: ${services.length}`);
       }
 
       const health = registry.checkHealth();
       if (Object.values(health).some((status) => status !== "ONLINE")) {
         throw new Error("Um dos serviços SOA não está ONLINE.");
+      }
+    });
+
+    // --- SUITE 7: PROPERTY-BASED FUZZING TESTS ---
+    executeTest("Fuzzing Engine", "Deve executar fuzzing por propriedades com 1.000+ iterações sem quebras no contrato seguro", () => {
+      const report = runPropertyBasedFuzzing(secureCode, { iterations: 1000 });
+      if (report.totalIterations !== 1000) throw new Error(`Iterações esperadas 1000, obtidas: ${report.totalIterations}`);
+      if (report.violationsCount > 0) throw new Error("Contrato seguro não deveria apresentar violações de fuzzing.");
+    });
+
+    // --- SUITE 8: FORMAL VERIFICATION TESTS ---
+    executeTest("Formal Verification", "Deve provar matematicamente teoremas de isolamento e monotonicidade via SMT/SAT", () => {
+      const report = verifyFormalProperties(secureCode);
+      if (report.provedTheoremsCount < 3) throw new Error(`Teoremas provados esperados >= 3, obtidos: ${report.provedTheoremsCount}`);
+      if (report.disprovedTheoremsCount > 0) throw new Error("Teoremas não deveriam ter sido desprovados para o contrato seguro.");
+    });
+
+    // --- SUITE 9: DEEP CPI ANALYZER TESTS ---
+    executeTest("CPI Deep Analyzer", "Deve mapear invocações cross-instruction e avaliar integridade de programa token", () => {
+      const report = analyzeCpiDeepRisks(secureCode);
+      if (report.totalCpiCallsDetected < 1) throw new Error("Ao menos 1 nó CPI de criação de conta deveria ser detectado.");
+    });
+
+    // --- SUITE 10: UTILS FUZZER PROPERTY GENERATOR TESTS ---
+    executeTest("Fuzzer Utility", "Deve gerar entradas numéricas extremas incluindo u64::MIN, u64::MAX e overflow boundary", () => {
+      const numInputs = generateExtremeNumericalInputs("amount", "u64");
+      const hasZero = numInputs.some((i) => i.boundaryClass === "ZERO" && i.numericValue === 0n);
+      const hasMax = numInputs.some((i) => i.boundaryClass === "MAX" && i.numericValue === BOUNDARY_VALUES.u64.MAX);
+      const hasOverflow = numInputs.some((i) => i.boundaryClass === "OVERFLOW_BOUNDARY" && i.numericValue === BOUNDARY_VALUES.u64.OVERFLOW);
+
+      if (!hasZero || !hasMax || !hasOverflow) {
+        throw new Error("Gerador de valores de borda falhou em gerar valores críticos de u64.");
+      }
+    });
+
+    executeTest("Fuzzer Utility", "Deve gerar estados de account anômalos com desbalanceamento de aluguel e falsificação", () => {
+      const accInputs = generateExtremeAccountStates("counterAccount");
+      const hasDrained = accInputs.some((a) => a.anomalyType === "RENT_IMBALANCE_DRAINED");
+      const hasUnderfunded = accInputs.some((a) => a.anomalyType === "RENT_IMBALANCE_BELOW_EXEMPTION");
+      const hasCosplay = accInputs.some((a) => a.anomalyType === "ACCOUNT_COSPLAY_FAKE_DISCRIMINATOR");
+      const hasSignerImpersonation = accInputs.some((a) => a.anomalyType === "UNAUTHORIZED_SIGNER_IMPERSONATION");
+
+      if (!hasDrained || !hasUnderfunded || !hasCosplay || !hasSignerImpersonation) {
+        throw new Error("Gerador de accounts falhou em cobrir mutações essenciais de segurança.");
+      }
+    });
+
+    executeTest("Fuzzer Utility", "Deve avaliar invariantes e identificar violação de overflow em contrato vulnerável", () => {
+      const flawedCode = `
+        pub fn inc(ctx: Context<Inc>) -> Result<()> {
+          ctx.accounts.counter.count += 1;
+          Ok(())
+        }
+      `;
+      const vulnerableFuzzerReport = runFuzzer(flawedCode, 1000);
+      const arithInv = vulnerableFuzzerReport.invariants.find((i) => i.id === "INV-ARITH-01");
+      if (!arithInv || arithInv.status !== "VIOLATED") {
+        throw new Error("Fuzzer deveria ter detectado violação de aritmética em código sem checked_add.");
+      }
+
+      const secureFuzzerReport = runFuzzer(secureCode, 1000);
+      if (secureFuzzerReport.violationsCount > 0) {
+        throw new Error("Contrato seguro não deveria falhar em nenhuma invariante do fuzzer.");
       }
     });
 

@@ -8,6 +8,7 @@ import { AiAuditorModal } from "./components/AiAuditorModal";
 import { TransactionLogsModal } from "./components/TransactionLogsModal";
 import { GitHubSyncModal } from "./components/GitHubSyncModal";
 import { BpmnAndTestsModal } from "./components/BpmnAndTestsModal";
+import { FuzzingReportModal } from "./components/FuzzingReportModal";
 import { ActiveTab, SolanaWallet, OnChainCounterAccount, TransactionLog, GitHubUser } from "./types";
 import {
   INITIAL_RUST_CODE,
@@ -76,6 +77,7 @@ export default function App() {
   const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
   const [isGitHubModalOpen, setIsGitHubModalOpen] = useState(false);
   const [isBpmnModalOpen, setIsBpmnModalOpen] = useState(false);
+  const [isFuzzingModalOpen, setIsFuzzingModalOpen] = useState(false);
 
   // Perform real-time AST Security Audit whenever rustCode changes
   const auditResult = useMemo(() => {
@@ -101,6 +103,7 @@ export default function App() {
         githubUser={githubUser}
         onOpenGitHubModal={() => setIsGitHubModalOpen(true)}
         onOpenBpmnModal={() => setIsBpmnModalOpen(true)}
+        onOpenFuzzingModal={() => setIsFuzzingModalOpen(true)}
       />
 
       {/* Main Container */}
@@ -130,6 +133,7 @@ export default function App() {
             spaceCalc={auditResult.spaceCalc}
             astNodes={auditResult.astNodes}
             onOpenAiModal={() => setIsAiModalOpen(true)}
+            onOpenFuzzingModal={() => setIsFuzzingModalOpen(true)}
           />
         )}
 
@@ -198,6 +202,12 @@ export default function App() {
         isOpen={isBpmnModalOpen}
         onClose={() => setIsBpmnModalOpen(false)}
         currentCode={rustCode}
+      />
+
+      <FuzzingReportModal
+        isOpen={isFuzzingModalOpen}
+        onClose={() => setIsFuzzingModalOpen(false)}
+        rustCode={rustCode}
       />
     </div>
   );

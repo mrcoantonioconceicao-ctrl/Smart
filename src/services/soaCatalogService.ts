@@ -186,6 +186,63 @@ export class SoaCatalogRegistry {
         },
       ],
     });
+
+    // 8. Property-Based Fuzzing Engine Service
+    this.servicesMap.set("FuzzingEngineService", {
+      serviceId: "srv-fuzzing-engine-v1",
+      name: "Property-Based Fuzzing & Mutation Test Service",
+      version: "1.0.0",
+      type: "CORE_DOMAIN",
+      endpoint: "in-memory://fuzzingEngineService",
+      protocol: "IN_MEMORY",
+      status: "ONLINE",
+      methods: [
+        {
+          name: "runPropertyBasedFuzzing",
+          description: "Submete o contrato a 10.000+ entradas aleatórias extremas e avalia invariantes.",
+          inputSchema: "{ rustCode: string, iterations?: number }",
+          outputSchema: "FuzzingReport",
+        },
+      ],
+    });
+
+    // 9. Symbolic Formal Verification Engine Service
+    this.servicesMap.set("FormalVerificationService", {
+      serviceId: "srv-formal-verification-v1",
+      name: "Symbolic Formal Verification & Mathematical Proof Service",
+      version: "1.0.0",
+      type: "CORE_DOMAIN",
+      endpoint: "in-memory://formalVerificationEngine",
+      protocol: "IN_MEMORY",
+      status: "ONLINE",
+      methods: [
+        {
+          name: "verifyFormalProperties",
+          description: "Prova matemática de teoremas de isolamento, monotonicidade e solvência via SMT/SAT.",
+          inputSchema: "{ rustCode: string }",
+          outputSchema: "FormalVerificationReport",
+        },
+      ],
+    });
+
+    // 10. Deep CPI Multi-Protocol Integration Analyzer Service
+    this.servicesMap.set("CpiDeepAnalyzerService", {
+      serviceId: "srv-cpi-deep-analyzer-v1",
+      name: "Deep Cross-Instruction (CPI) Multi-Protocol Integration Service",
+      version: "1.0.0",
+      type: "CORE_DOMAIN",
+      endpoint: "in-memory://cpiDeepAnalyzerService",
+      protocol: "IN_MEMORY",
+      status: "ONLINE",
+      methods: [
+        {
+          name: "analyzeCpiDeepRisks",
+          description: "Mapeamento em profundidade de invocações CPI, sequestro de programas e reentrância externa.",
+          inputSchema: "{ rustCode: string }",
+          outputSchema: "CpiDeepReport",
+        },
+      ],
+    });
   }
 
   public getAllServices(): SoaServiceContract[] {

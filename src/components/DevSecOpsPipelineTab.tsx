@@ -4,11 +4,13 @@
 // ============================================================================
 
 import React, { useState } from "react";
-import { Terminal, Play, CheckCircle2, AlertTriangle, ShieldCheck, Cpu, RefreshCw, FileText, Download } from "lucide-react";
+import { Terminal, Play, CheckCircle2, AlertTriangle, ShieldCheck, Cpu, RefreshCw, FileText, Download, Sparkles, Check } from "lucide-react";
 import { PipelineStep } from "../types";
 import { REPO_INFO } from "../data/contractData";
+import { useAppConfig } from "../context/AppContext";
 
 export const DevSecOpsPipelineTab: React.FC = () => {
+  const { viewMode, t } = useAppConfig();
   const [isRunningPipeline, setIsRunningPipeline] = useState(false);
   const [steps, setSteps] = useState<PipelineStep[]>([
     {
@@ -133,13 +135,17 @@ ${s.output.map((line) => `> ${line}`).join("\n")}
         <div>
           <div className="flex items-center space-x-2">
             <Terminal className="w-5 h-5 text-amber-400" />
-            <h2 className="text-lg font-bold text-slate-100">Pipeline CI/CD DevSecOps &amp; Build Runner</h2>
-            <span className="text-xs bg-amber-950 text-amber-300 font-mono px-2 py-0.5 rounded border border-amber-800">
-              Anchor v0.30.0
-            </span>
+            <h2 className="text-lg font-bold text-slate-100">
+              {viewMode === "simple" ? t.simplePipelineTitle : t.pipelineTitle}
+            </h2>
+            {viewMode === "advanced" && (
+              <span className="text-xs bg-amber-950 text-amber-300 font-mono px-2 py-0.5 rounded border border-amber-800">
+                Anchor v0.30.0
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Pipeline automatizado de auditoria estática AST, compilação verificável e testes de integração.
+            {viewMode === "simple" ? t.simplePipelineDesc : t.pipelineDesc}
           </p>
         </div>
 
@@ -154,64 +160,108 @@ ${s.output.map((line) => `> ${line}`).join("\n")}
             ) : (
               <Play className="w-4 h-4 fill-current" />
             )}
-            <span>{isRunningPipeline ? "Executando Pipeline..." : "Re-executar Pipeline Complete"}</span>
+            <span>{isRunningPipeline ? t.loading : t.runPipelineBtn}</span>
           </button>
 
-          <button
-            onClick={handleDownloadReport}
-            className="flex items-center space-x-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition-colors"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Exportar Relatório</span>
-          </button>
+          {viewMode === "advanced" && (
+            <button
+              onClick={handleDownloadReport}
+              className="flex items-center space-x-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>{t.exportReport}</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Pipeline Steps Grid */}
-      <div className="grid grid-cols-1 gap-4">
-        {steps.map((step) => (
-          <div
-            key={step.id}
-            className={`bg-slate-900 border rounded-xl p-5 shadow-lg transition-all ${
-              step.status === "running"
-                ? "border-indigo-500/80 bg-indigo-950/20"
-                : step.status === "passed"
-                ? "border-slate-800"
-                : "border-slate-800 opacity-60"
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                {step.status === "passed" && <CheckCircle2 className="w-5 h-5 text-emerald-400" />}
-                {step.status === "running" && <RefreshCw className="w-5 h-5 text-indigo-400 animate-spin" />}
-                {step.status === "idle" && <div className="w-5 h-5 rounded-full border-2 border-slate-700" />}
-                <div>
-                  <h3 className="text-sm font-bold text-slate-100">{step.name}</h3>
-                  <span className="text-xs font-mono text-cyan-400">$ {step.command}</span>
-                </div>
-              </div>
-
-              {step.durationMs && (
-                <span className="text-xs font-mono text-slate-400 bg-slate-950 px-2.5 py-1 rounded border border-slate-800">
-                  {step.durationMs}ms
-                </span>
-              )}
+      {/* Simple View vs Advanced Pipeline Steps */}
+      {viewMode === "simple" ? (
+        <div className="space-y-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+              <h3 className="text-base font-bold text-slate-100 flex items-center space-x-2">
+                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                <span>{t.simplePipelineTitle}</span>
+              </h3>
+              <span className="text-xs font-semibold text-emerald-400 bg-emerald-950 px-3 py-1 rounded-full border border-emerald-800">
+                ✓ 4/4 {t.rulesPassed}
+              </span>
             </div>
 
-            {/* Terminal Output */}
-            <div className="mt-3 bg-slate-950 p-3.5 rounded-lg border border-slate-800/80 font-mono text-xs text-slate-300 space-y-1 overflow-x-auto">
-              {step.output.map((line, i) => (
-                <div key={i} className="flex items-start space-x-2">
-                  <span className="text-slate-600 select-none">&gt;</span>
-                  <span className={line.includes("PASSED") || line.includes("✔") ? "text-emerald-400 font-semibold" : ""}>
-                    {line}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+              {steps.map((step, idx) => (
+                <div
+                  key={step.id}
+                  className={`p-4 rounded-xl border flex flex-col justify-between transition-all ${
+                    step.status === "passed"
+                      ? "bg-slate-950 border-emerald-500/30 text-emerald-300"
+                      : step.status === "running"
+                      ? "bg-indigo-950/40 border-indigo-500 text-indigo-200 animate-pulse"
+                      : "bg-slate-950 border-slate-800 text-slate-500"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold font-mono text-slate-400">Etapa {idx + 1}</span>
+                    {step.status === "passed" && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
+                    {step.status === "running" && <RefreshCw className="w-4 h-4 text-indigo-400 animate-spin" />}
+                  </div>
+                  <h4 className="text-xs font-bold text-slate-100 line-clamp-2">{step.name.split(". ")[1] || step.name}</h4>
+                  <span className="text-[11px] font-semibold text-emerald-400 mt-3 block">
+                    {step.status === "passed" ? "✓ Aprovado" : step.status === "running" ? "Processando..." : "Pendente"}
                   </span>
                 </div>
               ))}
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      ) : (
+        /* Advanced Pipeline Steps Grid with Terminal Output */
+        <div className="grid grid-cols-1 gap-4">
+          {steps.map((step) => (
+            <div
+              key={step.id}
+              className={`bg-slate-900 border rounded-xl p-5 shadow-lg transition-all ${
+                step.status === "running"
+                  ? "border-indigo-500/80 bg-indigo-950/20"
+                  : step.status === "passed"
+                  ? "border-slate-800"
+                  : "border-slate-800 opacity-60"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  {step.status === "passed" && <CheckCircle2 className="w-5 h-5 text-emerald-400" />}
+                  {step.status === "running" && <RefreshCw className="w-5 h-5 text-indigo-400 animate-spin" />}
+                  {step.status === "idle" && <div className="w-5 h-5 rounded-full border-2 border-slate-700" />}
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-100">{step.name}</h3>
+                    <span className="text-xs font-mono text-cyan-400">$ {step.command}</span>
+                  </div>
+                </div>
+
+                {step.durationMs && (
+                  <span className="text-xs font-mono text-slate-400 bg-slate-950 px-2.5 py-1 rounded border border-slate-800">
+                    {step.durationMs}ms
+                  </span>
+                )}
+              </div>
+
+              {/* Terminal Output */}
+              <div className="mt-3 bg-slate-950 p-3.5 rounded-lg border border-slate-800/80 font-mono text-xs text-slate-300 space-y-1 overflow-x-auto">
+                {step.output.map((line, i) => (
+                  <div key={i} className="flex items-start space-x-2">
+                    <span className="text-slate-600 select-none">&gt;</span>
+                    <span className={line.includes("PASSED") || line.includes("✔") ? "text-emerald-400 font-semibold" : ""}>
+                      {line}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

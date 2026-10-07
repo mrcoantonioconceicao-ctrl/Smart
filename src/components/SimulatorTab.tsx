@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { Cpu, Key, Wallet, Play, RotateCcw, Plus, Minus, Hash, CheckCircle, AlertCircle, Terminal, ExternalLink, ShieldAlert } from "lucide-react";
+import { Cpu, Key, Wallet, Play, RotateCcw, Plus, Minus, Hash, CheckCircle, AlertCircle, Terminal, ExternalLink, ShieldAlert, Sparkles, Wand2 } from "lucide-react";
 import { SolanaWallet, OnChainCounterAccount, TransactionLog } from "../types";
 import { generateSolanaPubkey, deriveCounterPda, generateTxHash } from "../utils/solanaSimulator";
 import { REPO_INFO } from "../data/contractData";
+import { useAppConfig } from "../context/AppContext";
 
 interface SimulatorTabProps {
   wallet: SolanaWallet;
@@ -25,10 +26,48 @@ export const SimulatorTab: React.FC<SimulatorTabProps> = ({
   setTxLogs,
   onOpenLogsModal,
 }) => {
+  const { viewMode, t } = useAppConfig();
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
   // Derive PDA based on current wallet
   const pdaInfo = deriveCounterPda(wallet.publicKey, REPO_INFO.programId);
+
+  const executeOneClickGuidedTest = () => {
+    setLoadingAction("guided");
+    setTimeout(() => {
+      const txHash1 = generateTxHash();
+      setCounterAccount({
+        isInitialized: true,
+        pdaAddress: pdaInfo.pdaAddress,
+        authority: wallet.publicKey,
+        count: counterAccount.isInitialized ? counterAccount.count + 1 : 1,
+        bump: pdaInfo.bump,
+        rentExemptReserveSol: 0.0012384,
+        dataLengthBytes: 49,
+      });
+
+      const newLog: TransactionLog = {
+        id: txHash1,
+        timestamp: new Date().toLocaleTimeString(),
+        signature: txHash1,
+        instruction: "guided_initialize_and_increment",
+        status: "SUCCESS",
+        slot: Math.floor(Math.random() * 5000) + 248000000,
+        computeUnitsUsed: 12500,
+        accountsInvolved: [
+          { name: "counter (PDA)", pubkey: pdaInfo.pdaAddress, isSigner: false, isWritable: true },
+          { name: "authority", pubkey: wallet.publicKey, isSigner: true, isWritable: true },
+        ],
+        logs: [
+          `Program ${REPO_INFO.programId} invoke [1]`,
+          `Program log: Guided test flow executed successfully`,
+          `Program log: Counter state set to initialized with value ${counterAccount.isInitialized ? counterAccount.count + 1 : 1}`,
+        ],
+      };
+      setTxLogs((prev) => [newLog, ...prev]);
+      setLoadingAction(null);
+    }, 600);
+  };
 
   const handleGenerateWallet = () => {
     const newPubkey = generateSolanaPubkey();
@@ -219,69 +258,187 @@ export const SimulatorTab: React.FC<SimulatorTabProps> = ({
         <div>
           <div className="flex items-center space-x-2">
             <Cpu className="w-5 h-5 text-cyan-400" />
-            <h2 className="text-lg font-bold text-slate-100">Simulador de Execução dApp Solana Anchor</h2>
-            <span className="text-xs bg-cyan-950 text-cyan-300 font-mono px-2 py-0.5 rounded border border-cyan-800">
-              Cluster: {cluster}
-            </span>
+            <h2 className="text-lg font-bold text-slate-100">
+              {viewMode === "simple" ? t.simpleSimulatorTitle : t.simulatorTitle}
+            </h2>
+            {viewMode === "advanced" && (
+              <span className="text-xs bg-cyan-950 text-cyan-300 font-mono px-2 py-0.5 rounded border border-cyan-800">
+                Cluster: {cluster}
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Simule o ciclo completo de vida de contas PDA, derivação de chaves determinísticas e RPC Anchor no browser.
+            {viewMode === "simple" ? t.simpleSimulatorDesc : t.simulatorDesc}
           </p>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={onOpenLogsModal}
-            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition-colors"
-          >
-            <Terminal className="w-4 h-4 text-cyan-400" />
-            <span>Ver Logs de Transação ({txLogs.length})</span>
-          </button>
-        </div>
+        {viewMode === "advanced" && (
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={onOpenLogsModal}
+              className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition-colors"
+            >
+              <Terminal className="w-4 h-4 text-cyan-400" />
+              <span>{t.viewLogsBtn} ({txLogs.length})</span>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Grid: Wallet Keypair & PDA Explorer */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Wallet Keypair Card */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Wallet className="w-5 h-5 text-indigo-400" />
-              <h3 className="text-base font-bold text-slate-100">Carteira Solana Assinante (Authority)</h3>
+      {/* Simple View: One-Click Guided Flow & Clean Status Cards */}
+      {viewMode === "simple" ? (
+        <div className="space-y-6">
+          {/* One Click Main Banner */}
+          <div className="bg-gradient-to-r from-cyan-950 via-slate-900 to-indigo-950 border border-cyan-800/50 rounded-2xl p-6 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="space-y-1 text-center md:text-left">
+              <div className="flex items-center justify-center md:justify-start space-x-2">
+                <Wand2 className="w-5 h-5 text-cyan-400" />
+                <h3 className="text-lg font-bold text-white">{t.simpleSimulatorTitle}</h3>
+              </div>
+              <p className="text-xs text-slate-300 max-w-xl">
+                {t.simpleSimulatorDesc}
+              </p>
             </div>
+
             <button
-              onClick={handleGenerateWallet}
-              className="text-xs px-2.5 py-1 bg-indigo-950 hover:bg-indigo-900 text-indigo-300 rounded border border-indigo-800 font-mono transition-colors"
+              onClick={executeOneClickGuidedTest}
+              disabled={loadingAction === "guided"}
+              className="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 disabled:opacity-50 text-white font-bold text-sm rounded-xl shadow-lg shadow-cyan-900/40 transition-all flex items-center justify-center space-x-2"
             >
-              Gerar Nova Chave
+              <Sparkles className="w-4 h-4 text-yellow-300" />
+              <span>{loadingAction === "guided" ? t.loading : t.oneClickTestBtn}</span>
             </button>
           </div>
 
-          <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-2 font-mono text-xs">
-            <div>
-              <span className="text-slate-400 block text-[10px] uppercase tracking-wider">Public Key (Ed25519)</span>
-              <span className="text-slate-100 font-bold break-all">{wallet.publicKey}</span>
+          {/* Clean Status Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Wallet Card */}
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t.walletCardTitle}</span>
+                <Wallet className="w-4 h-4 text-indigo-400" />
+              </div>
+              <div className="text-2xl font-black font-mono text-emerald-400">
+                {wallet.balanceSol.toFixed(2)} SOL
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-xs">
+                <span className="text-slate-400">{t.walletBalance}</span>
+                <button
+                  onClick={handleAirDrop}
+                  disabled={loadingAction === "airdrop"}
+                  className="px-2.5 py-1 bg-emerald-950 hover:bg-emerald-900 text-emerald-300 rounded border border-emerald-800 font-semibold transition-colors"
+                >
+                  + AirDrop SOL
+                </button>
+              </div>
             </div>
-            <div>
-              <span className="text-slate-400 block text-[10px] uppercase tracking-wider">Secret Key Bytes</span>
-              <span className="text-slate-400 text-[11px] truncate block">{wallet.secretKeyDisplay}</span>
+
+            {/* Counter Account State Card */}
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t.counterCardTitle}</span>
+                <Hash className="w-4 h-4 text-cyan-400" />
+              </div>
+              <div className="text-3xl font-black font-mono text-cyan-400">
+                {counterAccount.count}
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-xs">
+                <span className="text-slate-400">{t.accountStatusLabel}:</span>
+                <span className={`font-semibold ${counterAccount.isInitialized ? "text-emerald-400" : "text-rose-400"}`}>
+                  {counterAccount.isInitialized ? t.initializedSuccess : t.notInitializedErr}
+                </span>
+              </div>
+            </div>
+
+            {/* Quick Actions Card */}
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl space-y-3 flex flex-col justify-between">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Ações Simplificadas</span>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={executeIncrement}
+                  disabled={!counterAccount.isInitialized || loadingAction !== null}
+                  className="py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-xs rounded-lg transition-all flex flex-col items-center justify-center space-y-1"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>+1</span>
+                </button>
+                <button
+                  onClick={executeDecrement}
+                  disabled={!counterAccount.isInitialized || counterAccount.count <= 0 || loadingAction !== null}
+                  className="py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 font-bold text-xs rounded-lg border border-slate-700 transition-all flex flex-col items-center justify-center space-y-1"
+                >
+                  <Minus className="w-4 h-4" />
+                  <span>-1</span>
+                </button>
+                <button
+                  onClick={executeReset}
+                  disabled={!counterAccount.isInitialized || loadingAction !== null}
+                  className="py-2 bg-rose-950/80 hover:bg-rose-900 disabled:opacity-50 text-rose-300 font-bold text-xs rounded-lg border border-rose-800 transition-all flex flex-col items-center justify-center space-y-1"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>Reset</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t border-slate-800">
-            <div className="flex items-center space-x-2">
-              <span className="text-xs text-slate-400">Saldo On-Chain:</span>
-              <span className="text-sm font-bold font-mono text-emerald-400">{wallet.balanceSol.toFixed(4)} SOL</span>
+          {/* Friendly Status Alert Message */}
+          {txLogs.length > 0 && (
+            <div className="bg-emerald-950/40 border border-emerald-500/40 rounded-xl p-4 flex items-center space-x-3 text-emerald-300 text-xs">
+              <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
+              <div>
+                <strong className="font-bold text-emerald-200">{t.txSuccessMsg}</strong>
+                <p className="text-slate-300 mt-0.5">
+                  Última instrução: <code className="font-mono bg-emerald-950 px-1.5 py-0.5 rounded text-emerald-300">{txLogs[0].instruction}</code> às {txLogs[0].timestamp}.
+                </p>
+              </div>
             </div>
-            <button
-              onClick={handleAirDrop}
-              disabled={loadingAction === "airdrop"}
-              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-semibold rounded-lg shadow transition-all"
-            >
-              {loadingAction === "airdrop" ? "AirDropping..." : "+ AirDrop 1 SOL"}
-            </button>
-          </div>
+          )}
         </div>
+      ) : (
+        /* Advanced View: Full Technical Wallet & PDA Details */
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Wallet Keypair Card */}
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Wallet className="w-5 h-5 text-indigo-400" />
+                <h3 className="text-base font-bold text-slate-100">Carteira Solana Assinante (Authority)</h3>
+              </div>
+              <button
+                onClick={handleGenerateWallet}
+                className="text-xs px-2.5 py-1 bg-indigo-950 hover:bg-indigo-900 text-indigo-300 rounded border border-indigo-800 font-mono transition-colors"
+              >
+                Gerar Nova Chave
+              </button>
+            </div>
+
+            <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-2 font-mono text-xs">
+              <div>
+                <span className="text-slate-400 block text-[10px] uppercase tracking-wider">Public Key (Ed25519)</span>
+                <span className="text-slate-100 font-bold break-all">{wallet.publicKey}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px] uppercase tracking-wider">Secret Key Bytes</span>
+                <span className="text-slate-400 text-[11px] truncate block">{wallet.secretKeyDisplay}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+              <div className="flex items-center space-x-2">
+                <span className="text-xs text-slate-400">Saldo On-Chain:</span>
+                <span className="text-sm font-bold font-mono text-emerald-400">{wallet.balanceSol.toFixed(4)} SOL</span>
+              </div>
+              <button
+                onClick={handleAirDrop}
+                disabled={loadingAction === "airdrop"}
+                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-semibold rounded-lg shadow transition-all"
+              >
+                {loadingAction === "airdrop" ? "AirDropping..." : "+ AirDrop 1 SOL"}
+              </button>
+            </div>
+          </div>
 
         {/* PDA Derivation Calculator */}
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl space-y-4">
@@ -461,5 +618,7 @@ export const SimulatorTab: React.FC<SimulatorTabProps> = ({
         </div>
       </div>
     </div>
+  )}
+</div>
   );
 };

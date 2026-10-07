@@ -7,6 +7,9 @@ import {
   buildDependencyGraphFromCode,
   queryGraphVulnerabilities,
 } from "../services/graphRAGService.js";
+import { runPropertyBasedFuzzing } from "../services/fuzzingEngine.js";
+import { verifyFormalProperties } from "../services/formalVerificationEngine.js";
+import { analyzeCpiDeepRisks } from "../services/cpiDeepAnalyzerService.js";
 
 // Initialize the MCP Server instance
 const mcpServer = new McpServer({
@@ -481,6 +484,112 @@ mcpServer.tool(
           {
             type: "text",
             text: `Erro ao realizar push/PR no GitHub: ${err.message || String(err)}`,
+          },
+        ],
+      };
+    }
+  }
+);
+
+/**
+ * TOOL 5: run_property_fuzzing
+ * Submits smart contract code to property-based fuzzing with extreme inputs.
+ */
+mcpServer.tool(
+  "run_property_fuzzing",
+  "Executa Fuzzing Baseado em Propriedades (10.000 iterações com entradas extremas, e.g. u64::MAX, zero authority, invalid bump) validando invariantes de aritmética, acesso e isolamento.",
+  {
+    code: z.string().describe("Código fonte Rust/Anchor do contrato inteligente."),
+    iterations: z.number().optional().default(10000).describe("Número de iterações de fuzzing."),
+  },
+  async ({ code, iterations = 10000 }) => {
+    try {
+      const report = runPropertyBasedFuzzing(code, { iterations });
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(report, null, 2),
+          },
+        ],
+      };
+    } catch (err: any) {
+      return {
+        isError: true,
+        content: [
+          {
+            type: "text",
+            text: `Erro ao executar Fuzzing: ${err.message || String(err)}`,
+          },
+        ],
+      };
+    }
+  }
+);
+
+/**
+ * TOOL 6: verify_formal_properties
+ * Proves critical security properties using symbolic mathematical verification.
+ */
+mcpServer.tool(
+  "verify_formal_properties",
+  "Executa Verificação Formal e Prova Matemática de Invariantes (Access Control Isolation, Bounded Monotonicity, Canonical PDA Uniqueness, Rent Solvency).",
+  {
+    code: z.string().describe("Código fonte Rust/Anchor do contrato inteligente."),
+  },
+  async ({ code }) => {
+    try {
+      const report = verifyFormalProperties(code);
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(report, null, 2),
+          },
+        ],
+      };
+    } catch (err: any) {
+      return {
+        isError: true,
+        content: [
+          {
+            type: "text",
+            text: `Erro ao executar Verificação Formal: ${err.message || String(err)}`,
+          },
+        ],
+      };
+    }
+  }
+);
+
+/**
+ * TOOL 7: analyze_cpi_deep_risks
+ * Deeply maps cross-instruction calls and multi-protocol integration risks.
+ */
+mcpServer.tool(
+  "analyze_cpi_deep_risks",
+  "Análise Profunda de Chamadas Cross-Instruction (CPI) e Riscos de Integração Multi-Protocolo (DEXes, Lending, Oráculos, Token2022).",
+  {
+    code: z.string().describe("Código fonte Rust/Anchor do contrato inteligente."),
+  },
+  async ({ code }) => {
+    try {
+      const report = analyzeCpiDeepRisks(code);
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(report, null, 2),
+          },
+        ],
+      };
+    } catch (err: any) {
+      return {
+        isError: true,
+        content: [
+          {
+            type: "text",
+            text: `Erro ao executar Análise de CPI: ${err.message || String(err)}`,
           },
         ],
       };
